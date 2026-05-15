@@ -1,0 +1,99 @@
+# BHELVIZ — Development / Staging Docker Compose
+# Production uses Kubernetes with NetworkPolicies enforcing isolation.
+version: "3.9"
+
+networks:
+  bhelviz_private:
+    driver: bridge
+    internal: true          # No direct internet access
+  bhelviz_frontend:
+    driver: bridge
+
+services:
+
+  # ── FastAPI Backend ────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    networks:
+      - bhelviz_private
+      - bhelviz_frontend
+    ports:
+      - "8443:8443"
+    environment:
+      BHELVIZ_JWT_SECRET:       "${BHELVIZ_JWT_SECRET}"
+      BHELVIZ_NLP_ENDPOINT:     "http://nlp:8080/v1/messages"
+      BHELVIZ_NLP_KEY:          "${BHELVIZ_NLP_KEY}"
+      BHELVIZ_ORACLE_DSN:       "${BHELVIZ_ORACLE_DSN}"
+      BHELVIZ_ALLOWED_HOSTS:    "bhelviz.internal,localhost"
+      BHELVIZ_CORS_ORIGINS:     "https://bhelviz.internal"
+    volumes:
+      - /certs:/certs:ro
+      - /var/log/bhelviz:/var/log/bhelviz
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    depends_on:
+      - nlp
+
+  # ── NLP Engine (FLAN-T5 fine-tuned) ───────────────────────────────────
+  nlp:
+    build:
+      context: .
+      dockerfile: Dockerfile.nlp
+    restart: unless-stopped
+    networks:
+      - bhelviz_private     # NO bhelviz_frontend — NLP cannot reach the internet
+    environment:
+      MODEL_PATH: "/models/bhelviz-flan-t5"
+      MAX_TOKENS: "600"
+    volumes:
+      - /models:/models:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "1001:1001"
+    # CRITICAL: nlp service has NO Oracle DSN environment variable.
+    # It cannot reach the database network segment.
+
+  # ── Admin Console (separate service, separate VPC in production) ───────
+  admin_console:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    restart: unless-stopped
+    networks:
+      - bhelviz_frontend
+    ports:
+      - "9443:9443"
+    environment:
+      BHELVIZ_JWT_SECRET:  "${BHELVIZ_JWT_SECRET}"
+      ADMIN_API_ENDPOINT:  "http://api:8443"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  # ── Prometheus / Grafana (observability) ──────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    networks:
+      - bhelviz_private
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    read_only: true
+
+# Secrets are NEVER in this file. Always use Vault / KMS.
+# In production: each service reads its secret from Vault at startup.

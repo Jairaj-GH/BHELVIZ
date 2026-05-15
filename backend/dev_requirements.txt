@@ -1,0 +1,23 @@
+# BHELVIZ — Development Requirements (no Oracle, no PyTorch)
+# Use this for local development with SQLite.
+# For production, use requirements.txt (includes oracledb, torch, etc.)
+
+# ── Web Framework ──────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+python-multipart==0.0.9
+
+# ── Auth & Crypto ─────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0
+bcrypt==4.1.3
+cryptography==42.0.5
+
+# ── Database (SQLite via SQLAlchemy) ──────────────────────────────────────
+SQLAlchemy==2.0.30
+
+# ── Validation ────────────────────────────────────────────────────────────
+pydantic[email]==2.7.1
+email-validator==2.1.1
+
+# ── HTTP Client (NLP service calls) ───────────────────────────────────────
+httpx==0.27.0

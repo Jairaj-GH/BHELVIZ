@@ -1,0 +1,41 @@
+# BHELVIZ Backend Requirements
+# Python 3.11+
+
+# ── Web Framework ──────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+python-multipart==0.0.9          # OAuth2 form parsing
+
+# ── Auth & Crypto ─────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0  # JWT
+bcrypt==4.1.3                     # password hashing
+cryptography==42.0.5              # AES-256-GCM, Argon2id for Decoding Manual
+
+# ── Database ──────────────────────────────────────────────────────────────
+oracledb==2.3.0                   # python-oracledb thin mode (no Oracle Client)
+SQLAlchemy==2.0.30
+
+# ── Validation ────────────────────────────────────────────────────────────
+pydantic[email]==2.7.1
+
+# ── HTTP Client (NLP service calls) ───────────────────────────────────────
+httpx==0.27.0
+
+# ── Email / Notifications ─────────────────────────────────────────────────
+python-gnupg==0.5.2               # PGP/S-MIME email signing
+boto3==1.34.0                     # AWS SES (or replace with SES SDK of choice)
+
+# ── ML / NLP ──────────────────────────────────────────────────────────────
+torch==2.3.0
+transformers==4.41.0
+peft==0.11.0                      # LoRA adapters
+trl==0.9.4                        # RLHF / PPO
+
+# ── Evolutionary Optimisation (offline only) ──────────────────────────────
+deap==1.4.1                       # GA
+pyswarm==0.6                      # PSO
+
+# ── Observability ─────────────────────────────────────────────────────────
+structlog==24.1.0
+opentelemetry-sdk==1.24.0
+opentelemetry-exporter-otlp==1.24.0
