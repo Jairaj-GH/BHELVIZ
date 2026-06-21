@@ -1,10 +1,10 @@
 """
-BHELVIZ — Development FastAPI Entry Point (SQLite, no Oracle required)
-════════════════════════════════════════════════════════════════════════
+BHELVIZ — Development FastAPI Entry Point (Oracle readonly, transformer pipeline)
+════════════════════════════════════════════════════════════════════════════════════
 This is the DEVELOPMENT version of main.py.
-  - Uses SQLite (via database.py) instead of Oracle 19c
+  - Uses the real Oracle readonly session (bhel_ro) for /query execution
   - Auth uses simple demo credentials (no MFA, no Vault)
-  - NLP calls the real Anthropic API (set BHELVIZ_NLP_KEY=your-key)
+  - NLP uses the transformer/GA/PSO semantic pipeline first, then safe fallback IR
   - All other security code paths are exercised identically to production
 
 DEMO CREDENTIALS
@@ -16,7 +16,7 @@ Run:
 """
 
 from __future__ import annotations
-
+from bhelviz_pipeline_v3 import build_pipeline_v3, BhelvizPipelineV3
 from query_executor import (
     compile_and_execute,
     validate_ir,
@@ -24,7 +24,8 @@ from query_executor import (
 )
 from dotenv import load_dotenv
 load_dotenv()
-
+from rag_engine import generate_rag_response
+from router import route_question
 import hashlib
 import logging
 import os
@@ -35,6 +36,7 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 from sqlalchemy import MetaData, text
@@ -51,18 +53,13 @@ from database import (
     get_oracle_session,
     AccessRequestOrm,
     AuditLogOrm,
-    EmployeeOrm,
-    AttendanceOrm,
-    DepartmentOrm,
-    RoleLuOrm,
-    ShiftOrm,
 )
 from models import (
     AccessRequestCreate,
     ApprovalAction,
     StructuredIR,
 )
-from nlp_engine import NLPIRPipeline, RLHFFeedback
+from nlp_engine import RLHFFeedback
 print("DEV_MAIN RUNNING")
 
 logging.basicConfig(level=logging.INFO)
@@ -81,23 +78,28 @@ ADMIN_PASSWORD = "admin"  # demo only
 
 # ── LIFESPAN ──────────────────────────────────────────────────────────────────
 
-nlp_pipeline: Optional[NLPIRPipeline] = None
+semantic_pipeline: Optional[BhelvizPipelineV3] = None
 metadata = MetaData()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global nlp_pipeline
-
-    # Init dev DB
+    # Init dev DB (admin/audit only)
     get_dev_engine()
-    log.info("Dev SQLite database initialised")
+    log.info("Dev auth/audit database initialised")
 
-    if NLP_API_KEY:
-        nlp_pipeline = NLPIRPipeline(nlp_endpoint=NLP_ENDPOINT, api_key=NLP_API_KEY)
-        log.info("NLP pipeline initialised (endpoint: %s)", NLP_ENDPOINT)
-    else:
-        log.warning("BHELVIZ_NLP_KEY not set — NLP will return fallback IR")
+    global semantic_pipeline
+    try:
+        semantic_pipeline = build_pipeline_v3(
+            nlp_endpoint=NLP_ENDPOINT,
+            api_key=NLP_API_KEY,
+            checkpoint="bhelviz_best.pt",
+        )
+        log.info("Transformer NLP pipeline initialised (endpoint: %s)", NLP_ENDPOINT)
+    except Exception as exc:
+        semantic_pipeline = None
+        log.exception("Failed to initialise transformer pipeline: %s", exc)
+        log.warning("Falling back to safe rule-based IR only")
 
     yield
     log.info("BHELVIZ shutting down")
@@ -108,9 +110,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="BHELVIZ API (Dev)",
     version="2.0.0-dev",
-    description="Development mode — SQLite backend, Anthropic NLP",
+    description="Development mode — Oracle readonly backend with transformer NLP",
     lifespan=lifespan,
 )
+
+# Moved app.mount to the bottom to prevent it from intercepting API POST requests
 
 app.add_middleware(
     CORSMiddleware,
@@ -160,7 +164,12 @@ def _audit(
 
 @app.get("/health", include_in_schema=True)
 async def health():
-    return {"status": "ok", "version": "2.0.0-dev", "mode": "sqlite"}
+    return {
+        "status": "ok",
+        "version": "2.0.0-dev",
+        "mode": "oracle",
+        "executor": "readonly",
+    }
 
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -339,17 +348,73 @@ async def query(
     request: Request = None,
 ):
     t0 = time.monotonic()
-
-    # Step 1: NLP → IR
-    ir_dict: dict | None = None
-    if nlp_pipeline and NLP_API_KEY:
+    # feature flag for unified chat router
+    use_unified = os.environ.get("USE_UNIFIED_CHAT", "true").lower() in ("1", "true", "yes")
+    decision = None
+    rag_response = None
+    if use_unified:
         try:
-            ir = nlp_pipeline.get_ir(
+            decision = route_question(req.utterance)
+            log.info("Router decision: %s", decision)
+        except Exception as exc:
+            log.exception("Router failed, falling back: %s", exc)
+            decision = {"intent": "structured", "confidence": 0.0, "rag_query": req.utterance}
+
+        intent = decision.get("intent", "structured")
+
+        # Route based on decision
+        if intent == "document":
+            log.info("Routing to RAG pipeline (document)")
+            try:
+                rag_response = generate_rag_response(user_query=req.utterance, user_id=int(current_user.sub) if current_user else 1)
+                # RAGResponse is a pydantic model; convert to plain dict
+                return {
+                    "type": "document",
+                    "answer": rag_response.answer,
+                    "citations": [s.model_dump() for s in (rag_response.sources or [])],
+                    "model_meta": rag_response.model_meta,
+                    "message_id": rag_response.message_id,
+                    "conversation_id": rag_response.conversation_id,
+                }
+            except Exception as exc:
+                log.exception("RAG pipeline failed: %s", exc)
+                # fallback to existing logic below
+        elif intent == "hybrid":
+            log.info("Routing to hybrid pipeline")
+            try:
+                # call both; keep errors isolated
+                rag_response = generate_rag_response(user_query=req.utterance, user_id=int(current_user.sub) if current_user else 1)
+            except Exception as exc:
+                log.exception("RAG in hybrid failed: %s", exc)
+                rag_response = None
+            # proceed to structured for SQL part and combine below
+
+        # if intent == 'structured' or hybrid fallback to structured, continue to existing structured path
+    if semantic_pipeline is None:
+        log.warning("Semantic pipeline unavailable; using safe fallback IR")
+        ir_dict = _fallback_ir(req.utterance)
+        structured_ir = StructuredIR(**ir_dict)
+    else:
+        # Step 1: NLP → IR
+        try:
+            ir_obj = semantic_pipeline.get_ir(
                 utterance=req.utterance,
                 session_id=req.session_id,
                 conversation_history=req.history,
             )
-            ir_dict = ir.model_dump()
+
+            if isinstance(ir_obj, StructuredIR):
+                structured_ir = ir_obj
+                ir_dict = structured_ir.model_dump()
+            elif hasattr(ir_obj, "model_dump"):
+                ir_dict = ir_obj.model_dump()
+                structured_ir = StructuredIR(**ir_dict)
+            elif isinstance(ir_obj, dict):
+                ir_dict = ir_obj
+                structured_ir = StructuredIR(**ir_dict)
+            else:
+                raise TypeError(f"Unsupported IR object type: {type(ir_obj)!r}")
+
         except ValueError as exc:
             _audit(
                 "QUERY_REJECTED",
@@ -359,18 +424,13 @@ async def query(
                 request=request,
             )
             raise HTTPException(status_code=422, detail=str(exc))
+
         except Exception as exc:
-            log.error("NLP failed: %s", exc)
-            ir_dict = None
+            log.exception("NLP failed: %s", exc)
+            ir_dict = _fallback_ir(req.utterance)
+            structured_ir = StructuredIR(**ir_dict)
 
-    if ir_dict is None:
-        ir_dict = _fallback_ir(req.utterance)
-
-    # Ensure structured IR always exists, even when falling back
-    structured_ir = StructuredIR(**ir_dict)
-
-    # Step 2: Execute against REAL Oracle DB
-
+    # Step 2: Execute against Oracle readonly session
     db = get_oracle_session()
 
     try:
@@ -381,11 +441,9 @@ async def query(
             conn=db.connection(),
             metadata=metadata,
         )
-
         results = results_obj.model_dump()
 
     except PolicyError as exc:
-
         _audit(
             "QUERY_POLICY_BLOCK",
             current_user.email,
@@ -394,10 +452,24 @@ async def query(
             session_id=req.session_id,
             request=request,
         )
-
         raise HTTPException(
             status_code=400,
             detail=str(exc),
+        )
+
+    except Exception as exc:
+        log.exception("Query execution failed")
+        _audit(
+            "QUERY_EXECUTION_ERROR",
+            current_user.email,
+            str(exc),
+            level="ERROR",
+            session_id=req.session_id,
+            request=request,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Query execution failed: {exc}",
         )
 
     finally:
@@ -414,7 +486,7 @@ async def query(
         request=request,
     )
 
-    return {
+    base_structured = {
         **results,
         "intent": ir_dict.get("intent", "employee_lookup"),
         "description": ir_dict.get("description", req.utterance),
@@ -423,6 +495,27 @@ async def query(
         "ir": ir_dict,
         "structured_ir": structured_ir.model_dump(),
     }
+
+    # If unified router asked for hybrid, include RAG response if available
+    if use_unified and decision and decision.get("intent") == "hybrid":
+        doc_part = None
+        if rag_response is not None:
+            try:
+                doc_part = {
+                    "answer": rag_response.answer,
+                    "citations": [s.model_dump() for s in (rag_response.sources or [])],
+                    "model_meta": rag_response.model_meta,
+                }
+            except Exception:
+                doc_part = {"answer": None, "citations": []}
+
+        return {
+            "type": "hybrid",
+            "structured": base_structured,
+            "document": doc_part,
+        }
+
+    return {"type": "structured", "data": base_structured}
 
 
 def _fallback_ir(utterance: str) -> dict:
@@ -605,79 +698,6 @@ def _fallback_ir(utterance: str) -> dict:
             "max_rows": 500,
         },
     }
-
-def _execute_dev_query(ir: dict) -> dict:
-    """Execute IR against the dev SQLite database. Returns mock-encrypted rows."""
-    db = get_dev_session()
-    try:
-        filters = ir.get("filters", [])
-        limit = min(int(ir.get("limit", 100)), 500)
-
-        # Build base query: join employee + attendance + department + role
-        q = (
-            db.query(
-                EmployeeOrm.employee_id,
-                EmployeeOrm.employee_no_enc,
-                EmployeeOrm.full_name_enc,
-                EmployeeOrm.current_role_code,
-                EmployeeOrm.active_flag,
-                DepartmentOrm.dept_code,
-                AttendanceOrm.att_date,
-                AttendanceOrm.status_code,
-                AttendanceOrm.attendance_penalty,
-                ShiftOrm.shift_code,
-            )
-            .join(AttendanceOrm, AttendanceOrm.employee_id == EmployeeOrm.employee_id)
-            .join(DepartmentOrm, DepartmentOrm.department_id == EmployeeOrm.department_id)
-            .join(ShiftOrm, ShiftOrm.shift_id == AttendanceOrm.shift_id)
-        )
-
-        # Apply filters from IR
-        for f in filters:
-            col = f.get("column", "")
-            value = f.get("value", "")
-            if col in ("status", "status_code"):
-                q = q.filter(AttendanceOrm.status_code == value)
-            elif col in ("dept", "dept_code"):
-                q = q.filter(DepartmentOrm.dept_code == value)
-            elif col in ("role", "current_role_code"):
-                q = q.filter(EmployeeOrm.current_role_code == value)
-            elif col in ("shift", "shift_code"):
-                q = q.filter(ShiftOrm.shift_code == value)
-
-        rows_raw = q.limit(limit).all()
-
-        columns = [
-            "employee_no",
-            "full_name",
-            "dept",
-            "role",
-            "shift",
-            "status",
-            "att_date",
-            "penalty",
-        ]
-        rows = []
-        for r in rows_raw:
-            rows.append(
-                {
-                    "employee_no": r.employee_no_enc,
-                    "full_name": r.full_name_enc,
-                    "dept": r.dept_code,
-                    "role": r.current_role_code,
-                    "shift": r.shift_code,
-                    "status": r.status_code,
-                    "att_date": r.att_date.isoformat() if r.att_date else None,
-                    "penalty": r.attendance_penalty,
-                }
-            )
-
-        return {"columns": columns, "rows": rows, "row_count": len(rows)}
-
-    finally:
-        db.close()
-
-
 # ── RLHF FEEDBACK ─────────────────────────────────────────────────────────────
 
 class FeedbackRequest(BaseModel):
@@ -711,11 +731,11 @@ async def submit_feedback(
 async def db_test():
     db = get_oracle_session()
     try:
-        result = db.execute(text("SELECT USER FROM dual"))
+        result = db.execute(text("SELECT 1 FROM dual"))
         row = result.fetchone()
         return {
             "connected": True,
-            "db_user": row[0],
+            "val": row[0],
         }
     except Exception as e:
         return {
@@ -725,6 +745,12 @@ async def db_test():
     finally:
         db.close()
 
+
+# Serve built frontend if present (allows demo without running Vite)
+dist_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dist')
+if os.path.isdir(dist_path):
+    app.mount("/", StaticFiles(directory=dist_path, html=True), name="frontend")
+    log.info("Mounted static frontend from %s", dist_path)
 
 # ── ENTRYPOINT ────────────────────────────────────────────────────────────────
 

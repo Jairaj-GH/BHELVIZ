@@ -1,0 +1,11 @@
+
+BHELVIZ Policy Document
+
+Company leave policy:
+- Employees are entitled to 18 days of paid leave per year.
+- Leaves must be approved by manager; medical leaves require certificate.
+- For the Production department, additional safety training is required before extended leave.
+
+Attendance recording:
+- Late mark applies after 9:15 AM.
+- False present detection uses biometric and badge logs.

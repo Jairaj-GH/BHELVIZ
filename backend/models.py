@@ -3,8 +3,13 @@ BHELVIZ — Pydantic models for IR, user onboarding, audit, and query response.
 All IR fields are strictly typed — the executor accepts nothing outside these types.
 """
 from __future__ import annotations
-from pydantic import BaseModel, Field, EmailStr, field_validator
-from typing import Literal, Optional, List
+from pydantic import BaseModel, Field, field_validator
+try:
+    from pydantic import EmailStr  # optional dependency (email-validator)
+except Exception:  # pragma: no cover - fallback for minimal dev environments
+    EmailStr = str
+
+from typing import Literal, Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
 
@@ -96,27 +101,51 @@ class IRTimeWindow(BaseModel):
     type:  Literal["relative", "absolute"]
     value: str   # "today", "last_week", "last_month", or ISO date string
 
+class IRAggregation(BaseModel):
+
+    function: Literal[
+        "count",
+        "sum",
+        "avg",
+        "min",
+        "max"
+    ]
+
+    column: str
+
+    alias: Optional[str] = None
 
 class StructuredIR(BaseModel):
     """
     The only object the query executor will accept.
     Produced by the NLP engine; validated by the policy gate before compilation.
     """
-    intent:        IntentEnum
+    intent: IntentEnum
     table: str = "employee_attendance_v"
-    description:   str = Field(max_length=300)
-    chart_type:    ChartTypeEnum = ChartTypeEnum.table
+    description: str = Field(max_length=300)
+    chart_type: ChartTypeEnum = ChartTypeEnum.table
+
+    # Added for transformer / pipeline_v3 compatibility
+    select_mode: Optional[str] = None
+
+    # Core IR fields
+    select: Optional[List[IRSelectField]] = None
+    aggregations: List[IRAggregation] = Field(default_factory=list)
+    group_by: List[str] = Field(default_factory=list)
     group_by_field: Optional[str] = None
-    select:        Optional[List[IRSelectField]] = None
-    joins: Optional[List[IRJoin]] = Field(default_factory=list)
-    filters:       List[IRFilter]                = Field(default_factory=list)
-    order_by:      Optional[List[IROrderBy]]     = None
-    time_window:   Optional[IRTimeWindow]        = None
-    limit:         int = Field(default=100, le=1000, ge=1)
-    safety:        IRSafety = Field(default_factory=IRSafety)
+
+    joins: List[IRJoin] = Field(default_factory=list)
+    filters: List[IRFilter] = Field(default_factory=list)
+    order_by: Optional[List[IROrderBy]] = None
+    time_window: Optional[IRTimeWindow] = None
+
+    limit: int = Field(default=100, le=1000, ge=1)
+    safety: IRSafety = Field(default_factory=IRSafety)
+
     model_config = {
-    "extra": "forbid"
-}
+        "extra": "forbid"
+    }
+
     @field_validator("table")
     @classmethod
     def validate_table(cls, v):
@@ -124,18 +153,37 @@ class StructuredIR(BaseModel):
             "employee_attendance_v",
             "employee_leave_v",
         }
-
         if v not in allowed:
             raise ValueError(f"Unauthorized table/view: {v}")
-
         return v
-
 # ── REQUEST / RESPONSE ────────────────────────────────────────────────────────
 
 class QueryRequest(BaseModel):
     utterance:  str  = Field(min_length=1, max_length=1000)
     session_id: str
     context:    Optional[dict] = None
+
+
+class DocumentChunk(BaseModel):
+    """Represents an ingested document chunk stored in the vector DB."""
+    id: str
+    text: str
+    filename: Optional[str] = None
+    page: Optional[int] = None
+    chunk_id: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    embedding_id: Optional[str] = None
+    score: Optional[float] = None
+
+
+class RAGResponse(BaseModel):
+    """RAG-style response returned when context is available."""
+    answer: str
+    structured_ir: Optional[StructuredIR] = None
+    sources: List[DocumentChunk] = Field(default_factory=list)
+    model_meta: Dict[str, Any] = Field(default_factory=dict)
+    message_id: Optional[str] = None
+    conversation_id: Optional[str] = None
 
 
 class QueryResponse(BaseModel):
@@ -146,13 +194,14 @@ class QueryResponse(BaseModel):
     description: str
     chart_type: ChartTypeEnum
     ir_hash:    str                 # SHA-256 of compiled IR for audit
+    sources:    Optional[List[Dict[str, Any]]] = None
 
 
 # ── USER MANAGEMENT ───────────────────────────────────────────────────────────
 
 class AccessRequestCreate(BaseModel):
     full_name:   str  = Field(min_length=2, max_length=200)
-    email:       EmailStr
+    email:       str
     department:  str  = Field(min_length=1, max_length=100)
     justification: str = Field(min_length=10, max_length=1000)
 
@@ -174,7 +223,7 @@ class ApprovalAction(BaseModel):
 
 class UserSessionInfo(BaseModel):
     user_id:     int
-    email:       EmailStr
+    email:       str
     role:        Literal["admin", "user"]
     approved_at: datetime
     session_exp: datetime

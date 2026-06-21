@@ -1,4 +1,10 @@
 import { useState, useRef, useEffect } from "react";
+import './theme.css';
+import Sidebar from './components/Sidebar';
+import ChatWorkspace from './components/ChatWorkspace';
+import RightSidebar from './components/RightSidebar';
+import ErrorBoundary from './components/ErrorBoundary';
+import OldDashboard from './components/OldDashboard';
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -447,7 +453,9 @@ function AdminScreen({ onLogout, notify }) {
 
 /* ── MAIN DASHBOARD ─────────────────────────────────────────────── */
 function Dashboard({ userRole, onLogout, notify, token }) {
+  const USE_NEW_UI = typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_USE_NEW_UI === 'true' || import.meta.env.REACT_APP_USE_NEW_UI !== 'false');
   const [q, setQ] = useState("");
+  const [messages, setMessages] = useState([]);
   const [listening, setListening] = useState(false);
   const [loading, setLoading] = useState(false);
   const [decryptAnim, setDecryptAnim] = useState(false);
@@ -461,6 +469,7 @@ function Dashboard({ userRole, onLogout, notify, token }) {
   const [unlockingManual, setUnlockingManual] = useState(false);
   const [qHistory, setQHistory] = useState([]);
   const [feedback, setFeedback] = useState(null);
+  const [currentNav, setCurrentNav] = useState("dashboard");
   const recogRef = useRef(null);
 
   const unlockManual = () => {
@@ -484,64 +493,134 @@ function Dashboard({ userRole, onLogout, notify, token }) {
     notify("🎤 Listening… speak your BHELVIZ query.", "info");
   };
 
-  const execute = async () => {
-    if (!q.trim()) { notify("Enter a query first", "error"); return; }
+  const execute = async (queryText) => {
+    const utterance = (typeof queryText === 'string' && queryText.trim().length > 0) ? queryText.trim() : q.trim();
+    if (!utterance) { notify("Enter a query first", "error"); return; }
     if (!decrypted) { notify("Unlock the Decoding Manual before querying", "warning"); return; }
+    // append user message to conversation
+    const userMsg = { role: 'user', content: utterance, ts: new Date().toLocaleTimeString("en-IN") };
+    setMessages(m => [...m, userMsg]);
     setLoading(true); setFeedback(null);
+
+    let irRes = {};
+    let rows = [];
+    let display = [];
+    let chart = [];
+    let rawCount = 0;
+
     try {
       if (token) {
-        // Call backend /query which runs NLP->IR->compile->execute and returns ciphertext rows
+        const sessionId = `web-${Date.now()}`;
         const resp = await fetch('/query', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({ utterance: q, session_id: `web-${Date.now()}`, history }),
+          body: JSON.stringify({ utterance, session_id: sessionId, history }),
         });
 
-        if (!resp.ok) throw new Error(`Server query failed: ${resp.status}`);
-        const data = await resp.json();
-        const rows = data.rows || [];
-        // Map server rows to display format
-        const display = rows.map(r => ({
-          'Emp No': r.employee_no || r.employee_no_enc || r.employee_no || r.employee_no || '',
-          'Name': r.employee_name || r.full_name || r.full_name_enc || r.employee_name || '',
-          'Department': r.dept || r.dept_code || r.department || '',
-          'Role': r.current_role_code || r.role || '',
-          'Shift': r.shift || r.shift_code || r.shift_name || '',
-          'Status': r.attendance_status || r.attendance_status_code || r.status || '',
-          'Attendance': r.attendance_ts || r.attendance_ts || null,
-          'Penalty': (r.penalty !== undefined && r.penalty !== null) ? r.penalty : (r.attendance_penalty !== undefined ? r.attendance_penalty : '—'),
+        if (!resp.ok) {
+          const errBody = await resp.json().catch(() => ({}));
+          throw new Error(`Server query failed: ${resp.status} — ${errBody.detail || resp.statusText}`);
+        }
+        const envelope = await resp.json();
+
+        // ── Handle document (pure RAG) response ─────────────────────────
+        if (envelope.type === 'document') {
+          const botMsg = {
+            role: 'assistant',
+            type: 'document',
+            content: envelope.answer || '',
+            document: { answer: envelope.answer || '' },
+            citations: envelope.citations || [],
+            ts: new Date().toLocaleTimeString("en-IN"),
+          };
+          setMessages(m => [...m, botMsg]);
+          setQHistory(h => [{ q: utterance, ts: new Date().toLocaleTimeString("en-IN"), n: 0 }, ...h.slice(0, 7)]);
+          notify('✓ Document answer retrieved via RAG', 'success');
+          setLoading(false);
+          return;
+        }
+
+        // ── Unwrap structured / hybrid envelope ──────────────────────────
+        // dev_main returns { type: "structured", data: { rows, ir, intent, ... } }
+        // or              { type: "hybrid",     structured: { ... }, document: { ... } }
+        const structuredPayload = envelope.type === 'hybrid'
+          ? (envelope.structured || {})
+          : (envelope.data || envelope); // fallback: old flat shape
+
+        irRes = structuredPayload.ir || structuredPayload.structured_ir || {};
+        rows  = structuredPayload.rows || [];
+
+        display = rows.map(r => ({
+          'Emp No':     r.employee_no  || r.emp_id      || '',
+          'Name':       r.full_name    || r.employee_name || '',
+          'Department': r.dept_name    || r.dept_code   || r.department || '',
+          'Role':       r.current_role_code || r.role   || '',
+          'Shift':      r.shift        || r.shift_code  || r.shift_name || '',
+          'Status':     r.status       || r.attendance_status || '',
+          'Att. Date':  r.att_date     || r.attendance_ts || null,
+          'Penalty':    (r.penalty !== undefined && r.penalty !== null) ? r.penalty
+                        : (r.attendance_penalty !== undefined ? r.attendance_penalty : '—'),
         }));
 
         const map = {};
-        rows.forEach(r => { const k = r.attendance_status || r.attendance_status_code || r.status || 'UNKNOWN'; map[k] = (map[k] || 0) + 1; });
-        const chart = Object.entries(map).map(([name, value]) => ({ name, value }));
-        const rawCount = rows.length;
-        setIR(data.ir || {});
+        rows.forEach(r => {
+          const k = r.status || r.attendance_status || r.attendance_status_code || 'UNKNOWN';
+          map[k] = (map[k] || 0) + 1;
+        });
+        chart = Object.entries(map).map(([name, value]) => ({ name, value }));
+        rawCount = rows.length;
+
+        setIR(irRes);
         setDecryptAnim(true);
         await new Promise(r => setTimeout(r, 600));
         setDecryptAnim(false);
-        setResults({ display, chart, rawCount, intent: data.intent || data.ir?.intent, desc: data.description || data.ir?.description });
+        setResults({
+          display, chart, rawCount,
+          intent: structuredPayload.intent || irRes.intent,
+          desc:   structuredPayload.description || irRes.description,
+        });
+
+        const botMsg = {
+          role: 'assistant',
+          type: envelope.type === 'hybrid' ? 'hybrid' : 'structured',
+          content: structuredPayload.description || '',
+          structured: {
+            data: { display, chart },
+            chartType: structuredPayload.chart_type || irRes.chart_type || 'table',
+            intent: structuredPayload.intent,
+            description: structuredPayload.description,
+          },
+          // for hybrid: attach the document part so ChatWorkspace can render it
+          ...(envelope.type === 'hybrid' && envelope.document
+            ? { document: envelope.document, citations: envelope.document.citations || [] }
+            : {}),
+          ts: new Date().toLocaleTimeString("en-IN"),
+        };
+        setMessages(m => [...m, botMsg]);
       } else {
-        const irRes = await fetchIR(q, history);
+        irRes = await fetchIR(utterance, history);
         setIR(irRes);
         setDecryptAnim(true);
         await new Promise(r => setTimeout(r, 800));
         setDecryptAnim(false);
-        const { display, chart, rawCount } = runQuery(irRes, decrypted);
+        const qres = runQuery(irRes, decrypted);
+        display = qres.display; chart = qres.chart; rawCount = qres.rawCount;
         setResults({ display, chart, rawCount, intent: irRes.intent, desc: irRes.description });
+        const botMsg = { role: 'assistant', type: 'structured', structured: { data: { display, chart }, chartType: irRes.chart_type || 'table', intent: irRes.intent, description: irRes.description }, ts: new Date().toLocaleTimeString("en-IN") };
+        setMessages(m => [...m, botMsg]);
       }
-      setChartType(irRes.chart_type || "table");
-      setHistory(h => [...h.slice(-18), { role: "user", content: q }, { role: "assistant", content: JSON.stringify(irRes) }]);
-      setQHistory(h => [{ q, ts: new Date().toLocaleTimeString("en-IN"), n: rawCount }, ...h.slice(0, 7)]);
+
+      setChartType((irRes && irRes.chart_type) ? irRes.chart_type : "table");
+      setHistory(h => [...h.slice(-18), { role: "user", content: utterance }, { role: "assistant", content: JSON.stringify(irRes) }]);
+      setQHistory(h => [{ q: utterance, ts: new Date().toLocaleTimeString("en-IN"), n: rawCount }, ...h.slice(0, 7)]);
       notify(`✓ ${rawCount} records retrieved — client-side decryption complete`, "success");
     } catch (e) { notify("Query failed: " + e.message, "error"); }
     finally { setLoading(false); }
   };
 
-  const SCOLOR = { PRESENT: C.okBright, ABSENT: C.errBright, LATE: C.warnBright, FALSE_PRESENT: 'var(--status-false-present)' };
   const SAMPLES = [
     "Show all absent executives today",
     "Compare attendance by department",
@@ -551,254 +630,113 @@ function Dashboard({ userRole, onLogout, notify, token }) {
     "Anomaly detection — penalty cases this week",
   ];
 
+  const handleNavigation = (navItem) => {
+    setCurrentNav(navItem);
+    if (navItem === "new_chat") {
+      setMessages([]);
+      setResults(null);
+      setQ("");
+      setCurrentNav("dashboard");
+      notify("New chat started", "info");
+    }
+  };
+
+  // Render different views based on navigation
+  const renderContent = () => {
+    switch(currentNav) {
+      case "dashboard":
+        return (
+          <div style={{flex:1,display:'flex',flexDirection:'column'}}>
+            {/* Top header */}
+            <div style={{ padding: 12, borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, color: C.goldBright }}>BHELVIZ Dashboard</div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <Dot ok={true} />
+                <span className="small-muted">READ-ONLY · ORACLE 19c</span>
+              </div>
+            </div>
+
+            {showManualBar && (
+              <div style={{ padding: 12 }}>
+                <div className="manual-bar glass" style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 12 }}>
+                  <div style={{ fontSize: 20 }}>🔐</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700 }}>Decoding Manual Required</div>
+                    <div className="small-muted">Enter your manual password to unlock client-side AES-256-GCM decryption.</div>
+                  </div>
+                  <input value={manualPwd} onChange={e => setManualPwd(e.target.value)} placeholder="Manual password" type="password" onKeyDown={e => e.key === 'Enter' && unlockManual()} className="manual-input" aria-label="Manual password" />
+                  <button className="unlock-btn" onClick={unlockManual} disabled={unlockingManual} aria-label="Unlock manual">{unlockingManual ? 'Unlocking…' : 'Unlock'}</button>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+              <ErrorBoundary>
+                <ChatWorkspace messages={messages} onSend={(txt)=>{ setQ(txt); execute(txt); }} inputValue={q} setInputValue={setQ} loading={loading} />
+              </ErrorBoundary>
+              <RightSidebar ir={ir} qHistory={qHistory} />
+            </div>
+          </div>
+        );
+      
+      case "analytics":
+        return (
+          <div style={{flex:1,display:'flex',flexDirection:'column', padding: 20, overflow: 'auto'}}>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, color: C.goldBright, marginBottom: 20 }}>Analytics</div>
+            <Panel style={{ padding: 20, marginBottom: 20 }}>
+              <div style={{ color: C.textDim, fontSize: 14 }}>
+                <div style={{ marginBottom: 10 }}>📊 Advanced analytics features coming soon.</div>
+                <div>Monitor key metrics, trends, and system performance data with detailed visualizations.</div>
+              </div>
+            </Panel>
+          </div>
+        );
+      
+      case "reports":
+        return (
+          <div style={{flex:1,display:'flex',flexDirection:'column', padding: 20, overflow: 'auto'}}>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, color: C.goldBright, marginBottom: 20 }}>Reports</div>
+            <Panel style={{ padding: 20, marginBottom: 20 }}>
+              <div style={{ color: C.textDim, fontSize: 14 }}>
+                <div style={{ marginBottom: 10 }}>📋 Generate and manage detailed reports.</div>
+                <div>Create compliance reports, audit trails, and export data in multiple formats.</div>
+              </div>
+            </Panel>
+          </div>
+        );
+      
+      case "settings":
+        return (
+          <div style={{flex:1,display:'flex',flexDirection:'column', padding: 20, overflow: 'auto'}}>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, color: C.goldBright, marginBottom: 20 }}>Settings</div>
+            <Panel style={{ padding: 20, marginBottom: 20 }}>
+              <div style={{ marginBottom: 15 }}>
+                <div style={{ fontWeight: 600, marginBottom: 10 }}>System Settings</div>
+                <div style={{ color: C.textDim, fontSize: 13 }}>User Role: <span style={{ color: C.textBright }}>{userRole?.toUpperCase() || 'USER'}</span></div>
+              </div>
+              <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${C.border}` }}>
+                <Btn onClick={onLogout} variant="err" style={{ fontSize: 12 }}>LOGOUT</Btn>
+              </div>
+            </Panel>
+          </div>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div style={{ background: C.bg0, height: "100vh", color: C.text, fontFamily: "'Inter',sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
-      {/* HEADER */}
-      <div style={{ background: C.bg1, borderBottom: `1px solid ${C.border}`, padding: "9px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 21, fontWeight: 700, color: C.goldBright, letterSpacing: 3 }}>BHELVIZ</span>
-          <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: C.textDim, letterSpacing: 2, borderLeft: `1px solid ${C.border}`, paddingLeft: 14 }}>DATA ACCESS TERMINAL</span>
-          {decrypted ? <Badge bg={'var(--surface-dark)'} fg={C.okBright}>🔓 DECRYPTED</Badge> : <Badge bg={'var(--surface-dark)'} fg={C.errBright}>🔒 ENCRYPTED</Badge>}
-        </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Dot ok={true} />
-          <span style={{ fontSize: 9, color: C.textDim, fontFamily: "'JetBrains Mono',monospace" }}>READ-ONLY · ORACLE 19c</span>
-          <Btn onClick={onLogout} variant="ghost" style={{ fontSize: 10, padding: "3px 10px" }}>LOGOUT</Btn>
-        </div>
-      </div>
-
-      {/* DECODING MANUAL BAR */}
-      {showManualBar && (
-        <div style={{ background: C.bg3, borderBottom: `1px solid rgba(232,168,32,0.4)`, padding: "10px 18px", display: "flex", alignItems: "center", gap: 14, animation: "fadein 0.3s ease", flexShrink: 0 }}>
-          <span style={{ fontSize: 16, flexShrink: 0 }}>🔐</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, color: C.goldBright, fontWeight: 600, marginBottom: 1 }}>Decoding Manual Required</div>
-            <div style={{ fontSize: 9, color: C.textDim }}>Enter your manual password to unlock client-side AES-256-GCM decryption. This password never leaves your device — server has zero knowledge.</div>
-          </div>
-          <Inp value={manualPwd} onChange={setManualPwd} type="password" placeholder="Manual password…" style={{ width: 190, flexShrink: 0 }} onKeyDown={e => e.key === "Enter" && unlockManual()} />
-          <Btn onClick={unlockManual} disabled={unlockingManual} style={{ flexShrink: 0, minWidth: 80, justifyContent: "center" }}>
-            {unlockingManual ? <Spinner /> : "UNLOCK"}
-          </Btn>
-          {unlockingManual && <span style={{ fontSize: 9, color: C.goldBright, fontFamily: "'JetBrains Mono',monospace", animation: "pulse 0.5s infinite", flexShrink: 0 }}>Deriving key via Argon2id…</span>}
-        </div>
-      )}
-
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-
-        {/* LEFT SIDEBAR */}
-        <div style={{ width: 205, background: C.bg1, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", overflow: "auto", flexShrink: 0 }}>
-          <div style={{ padding: 12, borderBottom: `1px solid ${C.border}` }}>
-            <div style={{ fontSize: 8, fontFamily: "'JetBrains Mono',monospace", color: C.textDim, letterSpacing: 2, marginBottom: 8 }}>SECURITY STATUS</div>
-            {[["Oracle TDE", true], ["DB Vault", true], ["Query Isolation", true], ["NLP Isolation", true], ["Audit Log", true], ["Decoding Manual", decrypted]].map(([l, ok]) => (
-              <div key={l} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0" }}>
-                <Dot ok={ok} /><span style={{ fontSize: 10, color: ok ? C.text : C.errBright }}>{l}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ padding: 12, borderBottom: `1px solid ${C.border}` }}>
-            <div style={{ fontSize: 8, fontFamily: "'JetBrains Mono',monospace", color: C.textDim, letterSpacing: 2, marginBottom: 8 }}>SAMPLE QUERIES</div>
-            {SAMPLES.map((sq, i) => (
-              <div key={i} onClick={() => setQ(sq)} className="hover-contrast" style={{ fontSize: 10, color: C.textDim, padding: "8px 10px", cursor: "pointer", borderRadius: 6, marginBottom: 6, lineHeight: 1.5 }}>
-                {sq}
-              </div>
-            ))}
-          </div>
-          {qHistory.length > 0 && (
-            <div style={{ padding: 12 }}>
-              <div style={{ fontSize: 8, fontFamily: "'JetBrains Mono',monospace", color: C.textDim, letterSpacing: 2, marginBottom: 8 }}>RECENT QUERIES</div>
-              {qHistory.map((h, i) => (
-                <div key={i} onClick={() => setQ(h.q)} style={{ padding: "3px 6px", cursor: "pointer", marginBottom: 4 }}>
-                  <div style={{ fontSize: 9, color: C.textBright, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.q}</div>
-                  <div style={{ fontSize: 8, color: C.textDim, fontFamily: "'JetBrains Mono',monospace" }}>{h.ts} · {h.n} rows</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* MAIN CONTENT */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
-          {/* QUERY INPUT */}
-          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, flexShrink: 0, background: C.bg1 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
-              <div style={{ flex: 1, position: "relative" }}>
-                <textarea className="search-large" value={q} onChange={e => setQ(e.target.value)} disabled={!decrypted}
-                  placeholder={decrypted ? "Type or speak: 'Show absent executives in Power Systems today'…" : "Unlock Decoding Manual above to enable querying"}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); execute(); } }}
-                  style={{ border: `1px solid ${decrypted ? C.borderHi : C.border}`, color: decrypted ? C.text : C.textDim, height: 74, cursor: decrypted ? "text" : "not-allowed" }} />
-                {listening && <div style={{ position: "absolute", right: 8, top: 8, fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: C.errBright, animation: "pulse 0.6s infinite" }}>● REC</div>}
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <button onClick={toggleVoice} disabled={!decrypted}
-                  style={{ width: 42, height: 42, borderRadius: 4, border: `1px solid ${listening ? C.errBright : C.borderHi}`, background: listening ? 'var(--listening-bg)' : C.bg2, fontSize: 18, opacity: decrypted ? 1 : 0.4 }}>
-                  {listening ? "⏹" : "🎤"}
-                </button>
-                <Btn onClick={execute} disabled={loading || !decrypted} style={{ width: 42, height: 42, padding: 0, justifyContent: "center", borderRadius: 4, fontSize: 14 }}>
-                  {loading ? <Spinner /> : "▶"}
-                </Btn>
-              </div>
-            </div>
-            {history.length > 0 && (
-              <div style={{ marginTop: 6, display: "flex", justifyContent: "flex-end" }}>
-                <span onClick={() => { setHistory([]); notify("Conversation context cleared", "info"); }} style={{ fontSize: 9, color: C.textDim, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, textDecoration: "underline" }}>CLEAR CONTEXT ({history.length / 2} turns)</span>
-              </div>
-            )}
-          </div>
-
-          {/* RESULTS AREA */}
-          <div style={{ flex: 1, overflow: "auto", padding: "14px 16px" }}>
-
-            {decryptAnim && (
-              <Panel style={{ padding: 14, marginBottom: 12, display: "flex", gap: 12, alignItems: "center", borderColor: C.goldBright, animation: "pulse 0.5s infinite" }}>
-                <Spinner />
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: C.goldBright }}>
-                  Compiling IR → Oracle parameterized SELECT → Retrieving ciphertext → Decrypting AES-256-GCM payload in WebCrypto…
-                </span>
-              </Panel>
-            )}
-
-            {results && !decryptAnim && (
-              <div style={{ animation: "fadein 0.3s ease" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <div>
-                    <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 13, fontWeight: 700, color: C.textBright, letterSpacing: 1 }}>{results.desc}</span>
-                    <span style={{ marginLeft: 10, fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: C.textDim }}>{results.rawCount} rows · {results.intent}</span>
-                  </div>
-                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                    {["table", "bar", "pie", "area"].map(ct => (
-                      <button key={ct} onClick={() => setChartType(ct)} style={{ padding: "4px 10px", borderRadius: 2, border: "none", background: chartType === ct ? C.goldBright : C.bg3, color: chartType === ct ? C.bg0 : C.textDim, fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: chartType === ct ? 700 : 400 }}>{ct.toUpperCase()}</button>
-                    ))}
-                    <div style={{ marginLeft: 8, display: "flex", gap: 4 }}>
-                      <button onClick={() => { setFeedback("up"); notify("Feedback recorded — reward model updated", "success"); }} style={{ background: feedback === "up" ? C.ok : C.bg3, border: "none", borderRadius: 2, padding: "4px 8px", fontSize: 12 }}>👍</button>
-                      <button onClick={() => { setFeedback("down"); notify("Negative feedback recorded — RLHF queue updated", "info"); }} style={{ background: feedback === "down" ? C.err : C.bg3, border: "none", borderRadius: 2, padding: "4px 8px", fontSize: 12 }}>👎</button>
-                    </div>
-                  </div>
-                </div>
-
-                {chartType === "table" && (
-                  <div style={{ overflow: "auto", borderRadius: 4, border: `1px solid ${C.border}`, maxHeight: "52vh" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "'JetBrains Mono',monospace", fontSize: 10 }}>
-                      <thead>
-                        <tr style={{ background: C.bg3, position: "sticky", top: 0 }}>
-                          {Object.keys(results.display[0] || {}).map(col => (
-                            <th key={col} style={{ padding: "8px 12px", textAlign: "left", color: C.goldBright, fontWeight: 600, letterSpacing: 1, fontSize: 9, borderBottom: `1px solid ${C.border}`, borderRight: `1px solid ${C.border}`, whiteSpace: "nowrap" }}>{col.toUpperCase()}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {results.display.map((row, i) => (
-                          <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? C.bg1 : C.bg2 }}
-                            onMouseEnter={e => e.currentTarget.style.background = C.bg3}
-                            onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? C.bg1 : C.bg2}>
-                            {Object.entries(row).map(([k, v]) => (
-                              <td key={k} style={{ padding: "5px 12px", color: k === "Status" ? (SCOLOR[v] || C.text) : C.text, borderRight: `1px solid ${C.border}`, whiteSpace: "nowrap", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", fontSize: (!decrypted && (k === "Name" || k === "Emp No")) ? 8 : 10 }}>{v}</td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {chartType === "bar" && results.chart && (
-                  <Panel style={{ padding: 16 }}>
-                    <ResponsiveContainer width="100%" height={270}>
-                      <BarChart data={results.chart} margin={{ top: 8, right: 16, bottom: 50, left: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-                        <XAxis dataKey="name" tick={{ fill: C.textDim, fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }} angle={-20} textAnchor="end" interval={0} />
-                        <YAxis tick={{ fill: C.textDim, fontSize: 9 }} />
-                        <Tooltip contentStyle={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 4, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: C.textBright }} />
-                        <Bar dataKey="value" radius={[3, 3, 0, 0]}>{results.chart.map((_, i) => <Cell key={i} fill={CC[i % CC.length]} />)}</Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Panel>
-                )}
-
-                {chartType === "pie" && results.chart && (
-                  <Panel style={{ padding: 16 }}>
-                    <ResponsiveContainer width="100%" height={270}>
-                      <PieChart>
-                        <Pie data={results.chart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={95} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={{ stroke: C.textDim, strokeWidth: 1 }}>
-                          {results.chart.map((_, i) => <Cell key={i} fill={CC[i % CC.length]} />)}
-                        </Pie>
-                        <Tooltip contentStyle={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 4 }} />
-                        <Legend wrapperStyle={{ fontSize: 10, fontFamily: "'JetBrains Mono',monospace", color: C.textDim }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </Panel>
-                )}
-
-                {chartType === "area" && results.chart && (
-                  <Panel style={{ padding: 16 }}>
-                    <ResponsiveContainer width="100%" height={270}>
-                      <AreaChart data={results.chart} margin={{ top: 8, right: 16, bottom: 50, left: 0 }}>
-                        <defs>
-                          <linearGradient id="agrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={C.goldBright} stopOpacity={0.3} />
-                            <stop offset="95%" stopColor={C.goldBright} stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-                        <XAxis dataKey="name" tick={{ fill: C.textDim, fontSize: 9 }} angle={-20} textAnchor="end" interval={0} />
-                        <YAxis tick={{ fill: C.textDim, fontSize: 9 }} />
-                        <Tooltip contentStyle={{ background: C.bg3, border: `1px solid ${C.border}`, borderRadius: 4 }} />
-                        <Area type="monotone" dataKey="value" stroke={C.goldBright} fill="url(#agrad)" strokeWidth={2} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </Panel>
-                )}
-              </div>
-            )}
-
-            {!results && !loading && !decryptAnim && (
-              <div style={{ textAlign: "center", padding: 60, color: C.textDim, animation: "fadein 0.4s ease" }}>
-                <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.2 }}>◈</div>
-                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, letterSpacing: 4, marginBottom: 8 }}>READY</div>
-                <div style={{ fontSize: 11 }}>{decrypted ? "Type or speak a natural language query above" : "Unlock the Decoding Manual to begin"}</div>
-                {!decrypted && <div style={{ marginTop: 12, fontSize: 10 }}>You received your manual and password from the admin via encrypted email + SMS</div>}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT PANEL — IR VIEWER */}
-        {ir && (
-          <div style={{ width: 245, background: C.bg1, borderLeft: `1px solid ${C.border}`, overflow: "auto", flexShrink: 0, padding: 12 }}>
-            <div style={{ fontSize: 8, fontFamily: "'JetBrains Mono',monospace", color: C.textDim, letterSpacing: 2, marginBottom: 6 }}>STRUCTURED QUERY IR</div>
-            <div style={{ fontSize: 9, color: C.textDim, marginBottom: 10, lineHeight: 1.6 }}>NLP → IR only. No SQL emitted. Server compiles IR → parameterized SELECT with bind params.</div>
-            <pre style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: C.okBright, background: C.bg0, padding: 10, borderRadius: 3, border: `1px solid ${C.border}`, overflow: "auto", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
-              {JSON.stringify(ir, null, 2)}
-            </pre>
-            <Panel style={{ marginTop: 10, padding: 10 }}>
-              <div style={{ fontSize: 8, color: C.textDim, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginBottom: 6 }}>SECURITY INVARIANTS</div>
-              {["read_only: ✓", "no_sql_emission: ✓", "bind_params_only: ✓", "row_limit_enforced: ✓", "no_ddl_dml: ✓", "ai_never_sees_rows: ✓", "client_decryption_only: ✓"].map(inv => (
-                <div key={inv} style={{ fontSize: 8, color: C.okBright, fontFamily: "'JetBrains Mono',monospace", padding: "1px 0" }}>{inv}</div>
-              ))}
-            </Panel>
-            <Panel style={{ marginTop: 10, padding: 10 }}>
-              <div style={{ fontSize: 8, color: C.textDim, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginBottom: 6 }}>REWARD SIGNAL (RLHF)</div>
-              <div style={{ fontSize: 8, color: C.text, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.6 }}>
-                R = 0.35·valid_ir<br />+ 0.25·exec_success<br />+ 0.20·semantic_match<br />- 0.30·policy_violation<br />- 1.00·unsafe_output
-              </div>
-            </Panel>
-          </div>
-        )}
-      </div>
-
-      {/* STATUS BAR */}
-      <div style={{ background: C.bg1, borderTop: `1px solid ${C.border}`, padding: "4px 18px", display: "flex", gap: 16, alignItems: "center", flexShrink: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: C.textDim }}>
-        <span><Dot ok={true} /> Oracle 19c</span>
-        <span>TDE: ON</span><span>AES-256-GCM</span><span>Executor: READ-ONLY</span><span>AI: IR-only</span><span>Sessions: 1</span>
-        <span style={{ marginLeft: "auto" }}>BHELVIZ v2.0.0-DEFENSE · {new Date().toLocaleString("en-IN")}</span>
-      </div>
+    <div className="fc-theme-app">
+      <Sidebar onNav={handleNavigation} />
+      {renderContent()}
     </div>
   );
 }
 
 /* ── ROOT APP ────────────────────────────────────────────────────── */
 export default function App() {
+  const USE_NEW_UI = typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_USE_NEW_UI === 'true' || import.meta.env.REACT_APP_USE_NEW_UI !== 'false');
   const [screen, setScreen] = useState("login");
   const [role, setRole] = useState(null);
   const [notif, setNotif] = useState(null);
@@ -821,7 +759,9 @@ export default function App() {
       {notif && <Notif msg={notif.msg} type={notif.type} />}
       {screen === "login" && <LoginScreen notify={notify} onLogin={login} setToken={setToken} />}
       {screen === "admin" && <AdminScreen notify={notify} onLogout={logout} />}
-      {screen === "dashboard" && <Dashboard userRole={role} token={token} notify={notify} onLogout={logout} />}
+      {screen === "dashboard" && (
+        USE_NEW_UI ? <Dashboard userRole={role} token={token} notify={notify} onLogout={logout} /> : <OldDashboard userRole={role} token={token} notify={notify} onLogout={logout} />
+      )}
     </>
   );
 }

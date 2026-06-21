@@ -20,6 +20,7 @@ RUN chown -R bhelviz:bhelviz /app
 
 USER bhelviz
 
-EXPOSE 8000
+EXPOSE 8443
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"]
+# Run the app on 0.0.0.0:8443 — the FastAPI __main__ block expects SSL certs at /certs
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8443", "--log-level", "info"]

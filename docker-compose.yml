@@ -14,8 +14,8 @@ services:
   # ── FastAPI Backend ────────────────────────────────────────────────────
   api:
     build:
-      context: .
-      dockerfile: Dockerfile.api
+      context: ./backend
+      dockerfile: Dockerfile
     restart: unless-stopped
     networks:
       - bhelviz_private

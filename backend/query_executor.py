@@ -11,7 +11,14 @@ SECURITY INVARIANTS (must hold at every code path):
   7. The AI subsystem has no import or reference in this module.
 ═══════════════════════════════════════════════════════════════════════════════
 """
+
 from __future__ import annotations
+
+import hashlib
+import itertools
+import logging
+from typing import Any, Dict, Tuple
+
 from sqlalchemy import (
     MetaData,
     Table,
@@ -25,12 +32,6 @@ from sqlalchemy import (
     func,
     select,
 )
-import hashlib
-import itertools
-import logging
-from typing import Any, Dict, Tuple
-
-from sqlalchemy import MetaData, Table, and_, bindparam, create_engine, event, func, select
 from sqlalchemy.engine import Connection, URL
 
 from models import IntentEnum, QueryResponse, StructuredIR
@@ -44,24 +45,21 @@ MIN_LIMIT = 1
 
 ALLOWED_INTENTS = {e.value for e in IntentEnum}
 
-# Only the two Oracle views the service account is allowed to read.
 ALLOWED_TABLES = {
     "employee_attendance_v",
     "employee_leave_v",
 }
 
-# Logical column → physical Oracle column mapping.
-# The executor only knows about these two views.
 COLUMN_CATALOG: Dict[str, Dict[str, str]] = {
     "employee_attendance_v": {
-    "emp_id": "EMP_ID",
-    "full_name": "FULL_NAME",
-    "dept_name": "DEPT_NAME",
-    "att_date": "ATT_DATE",
-    "status": "STATUS",
-    "check_in": "CHECK_IN",
-    "check_out": "CHECK_OUT",
-},
+        "emp_id": "EMP_ID",
+        "full_name": "FULL_NAME",
+        "dept_name": "DEPT_NAME",
+        "att_date": "ATT_DATE",
+        "status": "STATUS",
+        "check_in": "CHECK_IN",
+        "check_out": "CHECK_OUT",
+    },
     "employee_leave_v": {
         "request_id": "REQUEST_ID",
         "emp_id": "EMP_ID",
@@ -77,8 +75,15 @@ COLUMN_CATALOG: Dict[str, Dict[str, str]] = {
 ALLOWED_OPERATORS = {"eq", "neq", "in", "between", "lt", "lte", "gt", "gte"}
 
 FORBIDDEN_PROJECTION_COLUMNS = {
-    "password", "passwd", "secret", "token", "key", "salt",
-    "private_key", "api_key", "credential",
+    "password",
+    "passwd",
+    "secret",
+    "token",
+    "key",
+    "salt",
+    "private_key",
+    "api_key",
+    "credential",
 }
 
 
@@ -102,7 +107,6 @@ def _resolve_physical_column(table_name: str, logical_column: str) -> str:
     if logical_column in catalog:
         return catalog[logical_column]
 
-    # case-insensitive fallback for robustness
     normalized = logical_column.lower()
     for k, v in catalog.items():
         if k.lower() == normalized:
@@ -112,7 +116,7 @@ def _resolve_physical_column(table_name: str, logical_column: str) -> str:
 
 
 def _resolve_table_column(tbl: Table, physical_name: str):
-    """Return a reflected SQLAlchemy column with case-insensitive fallback."""
+    """Return a SQLAlchemy column with case-insensitive fallback."""
     if physical_name in tbl.c:
         return tbl.c[physical_name]
 
@@ -128,7 +132,22 @@ def _resolve_table_column(tbl: Table, physical_name: str):
         if key.lower() == physical_name.lower():
             return tbl.c[key]
 
-    raise PolicyError(f"Column {physical_name!r} not found in reflected view {tbl.name!r}")
+    raise PolicyError(f"Column {physical_name!r} not found in view {tbl.name!r}")
+
+
+def _group_by_columns(ir: StructuredIR) -> list[str]:
+    """
+    Backward-compatible helper:
+    - prefers structured `group_by`
+    - falls back to legacy `group_by_field`
+    """
+    if getattr(ir, "group_by", None):
+        return [g for g in ir.group_by if g]
+
+    if getattr(ir, "group_by_field", None):
+        return [ir.group_by_field]
+
+    return []
 
 
 # ── IR VALIDATOR ──────────────────────────────────────────────────────────────
@@ -149,7 +168,7 @@ def validate_ir(ir: StructuredIR) -> None:
         raise PolicyError("IR safety.no_ddl must be True")
 
     # 2. Intent allowlist
-    if ir.intent not in ALLOWED_INTENTS:
+    if ir.intent.value not in ALLOWED_INTENTS:
         raise PolicyError(f"Intent not in allowlist: {ir.intent!r}")
 
     # 3. Table/view allowlist
@@ -162,9 +181,7 @@ def validate_ir(ir: StructuredIR) -> None:
 
     # 5. Row limit
     if ir.safety.max_rows < MIN_LIMIT or ir.safety.max_rows > MAX_LIMIT:
-        raise PolicyError(
-            f"IR safety.max_rows must be between {MIN_LIMIT} and {MAX_LIMIT}"
-        )
+        raise PolicyError(f"IR safety.max_rows must be between {MIN_LIMIT} and {MAX_LIMIT}")
     if ir.limit < MIN_LIMIT:
         raise PolicyError(f"Requested limit {ir.limit} is below MIN_LIMIT {MIN_LIMIT}")
     if ir.limit > MAX_LIMIT:
@@ -184,9 +201,19 @@ def validate_ir(ir: StructuredIR) -> None:
         if field.column.lower() in FORBIDDEN_PROJECTION_COLUMNS:
             raise PolicyError(f"Forbidden column in projection: {field.column!r}")
 
-    # 7. Filters
+    # 7. Aggregations
+    for agg in getattr(ir, "aggregations", []) or []:
+        if agg.column.lower() in FORBIDDEN_PROJECTION_COLUMNS:
+            raise PolicyError(f"Forbidden column in aggregation: {agg.column!r}")
+        _resolve_physical_column(ir.table, agg.column)
+
+    # 8. Filters
     for f in ir.filters:
-        prefix, col = (f.column.split(".", 1) + [None])[:2] if "." in f.column else (ir.table, f.column)
+        prefix, col = (
+            (f.column.split(".", 1) + [None])[:2]
+            if "." in f.column
+            else (ir.table, f.column)
+        )
         if prefix != ir.table:
             raise PolicyError(
                 f"Filter target table {prefix!r} does not match IR table {ir.table!r}"
@@ -195,17 +222,22 @@ def validate_ir(ir: StructuredIR) -> None:
         if f.op not in ALLOWED_OPERATORS:
             raise PolicyError(f"Operator not in allowlist: {f.op!r}")
 
-    # 8. Group-by
-    if ir.group_by_field:
-        _resolve_physical_column(ir.table, ir.group_by_field)
-
-    # 9. Order-by
+    # 9. Group-by
+    for gb in _group_by_columns(ir):
+        _resolve_physical_column(ir.table, gb)
+    agg_aliases = {
+    agg.alias
+    for agg in (getattr(ir, "aggregations", []) or [])
+    if getattr(agg, "alias", None)
+}
+    # 10. Order-by
     for o in (ir.order_by or []):
         if o.table != ir.table:
             raise PolicyError(
                 f"Order-by table {o.table!r} does not match IR table {ir.table!r}"
             )
-        _resolve_physical_column(ir.table, o.column)
+        if o.column not in agg_aliases:
+            _resolve_physical_column(ir.table, o.column)
 
 
 # ── IR COMPILER ───────────────────────────────────────────────────────────────
@@ -232,63 +264,93 @@ def compile_ir(
     if primary_table_name not in ALLOWED_TABLES:
         raise PolicyError(f"Unauthorized table/view: {primary_table_name!r}")
 
+    # Define the minimal Oracle view shape locally; no reflection.
     if primary_table_name == "employee_leave_v":
-
-            tbl = Table(
-                "EMPLOYEE_LEAVE_V",
-                metadata,
-
-                Column("REQUEST_ID", String),
-                Column("EMP_ID", String),
-                Column("FULL_NAME", String),
-                Column("LEAVE_TYPE", String),
-                Column("START_DATE", Date),
-                Column("END_DATE", Date),
-                Column("REASON", String),
-                Column("STATUS", String),
-
-                schema="SYSTEM",
-                extend_existing=True,
+        tbl = Table(
+            "EMPLOYEE_LEAVE_V",
+            metadata,
+            Column("REQUEST_ID", String),
+            Column("EMP_ID", String),
+            Column("FULL_NAME", String),
+            Column("LEAVE_TYPE", String),
+            Column("START_DATE", Date),
+            Column("END_DATE", Date),
+            Column("REASON", String),
+            Column("STATUS", String),
+            schema="SYSTEM",
+            extend_existing=True,
         )
-
     elif primary_table_name == "employee_attendance_v":
-
-            tbl = Table(
-                "EMPLOYEE_ATTENDANCE_V",
-                metadata,
-
-                Column("EMP_ID", String),
-                Column("FULL_NAME", String),
-                Column("DEPT_NAME", String),
-                Column("ATT_DATE", Date),
-                Column("STATUS", String),
-                Column("CHECK_IN", String),
-                Column("CHECK_OUT", String),
-
-                schema="SYSTEM",
-                extend_existing=True,
-            )
-
+        tbl = Table(
+            "EMPLOYEE_ATTENDANCE_V",
+            metadata,
+            Column("EMP_ID", String),
+            Column("FULL_NAME", String),
+            Column("DEPT_NAME", String),
+            Column("ATT_DATE", Date),
+            Column("STATUS", String),
+            Column("CHECK_IN", String),
+            Column("CHECK_OUT", String),
+            schema="SYSTEM",
+            extend_existing=True,
+        )
     else:
-            raise PolicyError(
-                f"Unauthorized table/view: {primary_table_name}"
-            )
+        raise PolicyError(f"Unauthorized table/view: {primary_table_name}")
+
+    # ── Compile aggregations ─────────────────────────────────────────────────
+    agg_exprs = []
+    agg_label_map = {}  # alias -> labeled SQL expression
+
+    for agg in getattr(ir, "aggregations", []) or []:
+        physical_col = _resolve_physical_column(primary_table_name, agg.column)
+        col_obj = _resolve_table_column(tbl, physical_col)
+
+        if agg.function == "count":
+            expr = func.count(col_obj)
+        elif agg.function == "sum":
+            expr = func.sum(col_obj)
+        elif agg.function == "avg":
+            expr = func.avg(col_obj)
+        elif agg.function == "min":
+            expr = func.min(col_obj)
+        elif agg.function == "max":
+            expr = func.max(col_obj)
+        else:
+            raise PolicyError(f"Unsupported aggregation function: {agg.function}")
+
+        alias = agg.alias or f"{agg.function}_{agg.column}"
+        labeled = expr.label(alias)
+        agg_exprs.append(labeled)
+        agg_label_map[alias] = labeled
 
     # ── Build SELECT list ─────────────────────────────────────────────────────
+    group_cols = _group_by_columns(ir)
     select_exprs = []
-    if ir.select:
-        for item in ir.select:
-            if item.table != primary_table_name:
-                raise PolicyError(
-                    f"Select field table {item.table!r} does not match IR table {primary_table_name!r}"
-                )
-            physical_col = _resolve_physical_column(primary_table_name, item.column)
+
+    if agg_exprs:
+        # Analytical query: only group-by columns and aggregation expressions
+        for gb in group_cols:
+            physical_col = _resolve_physical_column(primary_table_name, gb)
             col_obj = _resolve_table_column(tbl, physical_col)
-            label = item.alias or item.column
-            select_exprs.append(col_obj.label(label))
+            # label the group column with its own name for clarity
+            select_exprs.append(col_obj.label(gb))
+
+        # Add aggregation expressions
+        select_exprs.extend(agg_exprs)
     else:
-        # Default: all columns on the primary view
-        select_exprs = [tbl]
+        # Standard non-aggregated query — use explicit select list or all columns
+        if ir.select:
+            for item in ir.select:
+                if item.table != primary_table_name:
+                    raise PolicyError(
+                        f"Select field table {item.table!r} does not match IR table {primary_table_name!r}"
+                    )
+                physical_col = _resolve_physical_column(primary_table_name, item.column)
+                col_obj = _resolve_table_column(tbl, physical_col)
+                label = item.alias or item.column
+                select_exprs.append(col_obj.label(label))
+        else:
+            select_exprs = [tbl]  # All columns
 
     stmt = select(*select_exprs) if select_exprs else select(tbl)
 
@@ -340,26 +402,46 @@ def compile_ir(
     # ── Time window ───────────────────────────────────────────────────────────
     if ir.time_window and primary_table_name in ("employee_attendance_v", "employee_leave_v"):
         if primary_table_name == "employee_attendance_v":
-            ts_col = _resolve_table_column(tbl, _resolve_physical_column(primary_table_name, "att_date"))
+            ts_col = _resolve_table_column(
+                tbl,
+                _resolve_physical_column(primary_table_name, "att_date"),
+            )
         elif primary_table_name == "employee_leave_v":
-            ts_col = _resolve_table_column(tbl, _resolve_physical_column(primary_table_name, "start_date"))
+            ts_col = _resolve_table_column(
+                tbl,
+                _resolve_physical_column(primary_table_name, "start_date"),
+            )
         else:
             ts_col = None
 
         if ts_col is not None and ir.time_window.type == "relative":
+            import datetime
+
+            today = datetime.datetime.now().replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
             rel_map = {
-                "today": func.trunc(func.sysdate()),
-                "yesterday": func.trunc(func.sysdate()) - 1,
-                "last_week": func.trunc(func.sysdate()) - 7,
-                "last_month": func.add_months(func.trunc(func.sysdate()), -1),
+                "today": today,
+                "yesterday": today - datetime.timedelta(days=1),
+                "last_week": today - datetime.timedelta(days=7),
+                "last_month": today - datetime.timedelta(days=30),
             }
             if ir.time_window.value in rel_map:
-                stmt = stmt.where(ts_col >= rel_map[ir.time_window.value])
+                bn = _new_bind("time")
+                stmt = stmt.where(ts_col >= bindparam(bn))
+                bind_values[bn] = rel_map[ir.time_window.value]
 
     # ── GROUP BY ──────────────────────────────────────────────────────────────
-    if ir.group_by_field:
-        physical = _resolve_physical_column(primary_table_name, ir.group_by_field)
-        stmt = stmt.group_by(_resolve_table_column(tbl, physical))
+    # Only apply GROUP BY if actual aggregations exist.
+    if group_cols and ir.aggregations:
+        group_exprs = [
+            _resolve_table_column(
+                tbl,
+                _resolve_physical_column(primary_table_name, gb),
+            )
+            for gb in group_cols
+        ]
+        stmt = stmt.group_by(*group_exprs)
 
     # ── ORDER BY ──────────────────────────────────────────────────────────────
     for o in (ir.order_by or []):
@@ -367,9 +449,16 @@ def compile_ir(
             raise PolicyError(
                 f"Order-by table {o.table!r} does not match IR table {primary_table_name!r}"
             )
-        physical_col = _resolve_physical_column(primary_table_name, o.column)
-        col_obj = _resolve_table_column(tbl, physical_col)
-        stmt = stmt.order_by(col_obj.desc() if o.direction == "desc" else col_obj.asc())
+        # If the column is an aggregation alias, use the expression directly
+        order_expr = agg_label_map.get(o.column)
+        if order_expr is not None:
+            # already a labeled expression; use it directly
+            stmt = stmt.order_by(order_expr.desc() if o.direction == "desc" else order_expr.asc())
+        else:
+            # fallback to a physical column
+            physical_col = _resolve_physical_column(primary_table_name, o.column)
+            col_obj = _resolve_table_column(tbl, physical_col)
+            stmt = stmt.order_by(col_obj.desc() if o.direction == "desc" else col_obj.asc())
 
     # ── LIMIT (always clamped) ────────────────────────────────────────────────
     clamped_limit = max(MIN_LIMIT, min(ir.limit, ir.safety.max_rows, MAX_LIMIT))
@@ -412,7 +501,12 @@ def compile_and_execute(
     result = conn.execute(stmt, bind_values)
     raw_rows = result.mappings().all()
 
-    rows = [dict(r) for r in raw_rows]
+    # Normalize Oracle uppercase column names
+    rows = [
+        {k.lower(): v for k, v in dict(r).items()}
+        for r in raw_rows
+    ]
+
     columns = list(rows[0].keys()) if rows else []
 
     return QueryResponse(
@@ -450,8 +544,6 @@ def make_readonly_engine(dsn: str, username: str, password: str):
 
     @event.listens_for(engine, "connect")
     def _on_connect(dbapi_conn, _):
-        # The database account itself should be read-only; keep this hook minimal.
-        # No session writes are performed here.
         return None
 
     return engine
