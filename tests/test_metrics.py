@@ -1,4 +1,4 @@
-from backend import metrics
+from BHELVIZ_FULL.backend.core import metrics
 
 
 def test_metrics_noop_inc_and_observe():

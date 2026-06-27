@@ -38,16 +38,16 @@ from pydantic import BaseModel
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import sessionmaker
 
-from auth import (
+from core.auth import (
     OnboardingService, create_access_token, get_current_user,
     require_admin, require_approved_user, verify_password, TokenPayload,
 )
-from models import (
+from core.models import (
     AccessRequestCreate, ApprovalAction, QueryResponse, AuditEvent,
     UserSessionInfo,
 )
-from nlp_engine import NLPIRPipeline, RLHFFeedback
-from query_executor import compile_and_execute, make_readonly_engine
+from NLP.nlp_engine import NLPIRPipeline, RLHFFeedback
+from DB.query_executor import compile_and_execute, make_readonly_engine
 
 log = logging.getLogger("bhelviz.api")
 

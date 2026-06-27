@@ -1,4 +1,4 @@
-from backend.router import route_question
+from BHELVIZ_FULL.backend.NLP.router import route_question
 
 
 def test_route_document():

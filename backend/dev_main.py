@@ -16,16 +16,18 @@ Run:
 """
 
 from __future__ import annotations
-from bhelviz_pipeline_v3 import build_pipeline_v3, BhelvizPipelineV3
-from query_executor import (
+from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
+from NLP.bhelviz_pipeline_v3 import build_pipeline_v3, BhelvizPipelineV3
+from DB.query_executor import (
     compile_and_execute,
     validate_ir,
     PolicyError,
 )
-from dotenv import load_dotenv
-load_dotenv()
-from rag_engine import generate_rag_response
-from router import route_question
+from RAG.rag_engine import generate_rag_response
+from NLP.router import route_question
 import hashlib
 import logging
 import os
@@ -41,25 +43,25 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 from sqlalchemy import MetaData, text
 
-from auth import (
+from core.auth import (
     create_access_token,
     get_current_user,
     require_admin,
     TokenPayload,
 )
-from database import (
+from core.database import (
     get_dev_engine,
     get_dev_session,
     get_oracle_session,
     AccessRequestOrm,
     AuditLogOrm,
 )
-from models import (
+from core.models import (
     AccessRequestCreate,
     ApprovalAction,
     StructuredIR,
 )
-from nlp_engine import RLHFFeedback
+from NLP.nlp_engine import RLHFFeedback
 print("DEV_MAIN RUNNING")
 
 logging.basicConfig(level=logging.INFO)
@@ -93,7 +95,7 @@ async def lifespan(app: FastAPI):
         semantic_pipeline = build_pipeline_v3(
             nlp_endpoint=NLP_ENDPOINT,
             api_key=NLP_API_KEY,
-            checkpoint="bhelviz_best.pt",
+            checkpoint="training/bhelviz_best.pt",
         )
         log.info("Transformer NLP pipeline initialised (endpoint: %s)", NLP_ENDPOINT)
     except Exception as exc:
