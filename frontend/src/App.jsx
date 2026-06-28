@@ -224,76 +224,96 @@ function LoginScreen({ onLogin, notify }) {
   };
 
   if (submitted) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: C.bg0 }}>
-      <Panel style={{ maxWidth: 440, width: "90%", padding: 40, textAlign: "center", animation: "fadein 0.4s ease" }}>
-        <div style={{ fontSize: 36, marginBottom: 16 }}>📨</div>
-        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: C.goldBright, letterSpacing: 2, marginBottom: 12 }}>REQUEST SUBMITTED</div>
-        <div style={{ color: C.text, fontSize: 12, lineHeight: 1.9, marginBottom: 20 }}>
-          Your request has been forwarded to the BHELVIZ Security Administrator via S/MIME encrypted email.<br /><br />
-          Upon approval you will receive:<br />
-          <span style={{ color: C.textBright }}>① Encrypted Decoding Manual (email)</span><br />
-          <span style={{ color: C.textBright }}>② Manual password (separate SMS)</span><br />
-          <span style={{ color: C.textBright }}>③ DB credentials (time-limited secure link)</span>
+    <div className="login-root">
+      <div className="login-bg-orb" style={{ width: 400, height: 400, background: 'radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%)', top: '-10%', left: '20%' }} />
+      <div className="login-panel">
+        <div className="login-logo-wrap">
+          <div className="login-logo">BHELVIZ</div>
         </div>
-        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: C.textDim }}>AUDIT-ID: BVIZ-{Date.now().toString(36).toUpperCase().slice(0, 8)}</div>
-        <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
-          <Btn onClick={() => setSubmitted(false)} variant="ghost">← Back to login</Btn>
+        <div className="login-card" style={{ padding: 40, textAlign: 'center' }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(59,122,82,0.15)', border: '1px solid rgba(59,122,82,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--status-present)" strokeWidth="1.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div style={{ fontFamily: 'var(--ff-display)', fontSize: 20, fontWeight: 500, color: 'var(--gold-warm)', letterSpacing: '0.08em', marginBottom: 12 }}>Request submitted</div>
+          <div style={{ color: 'rgba(244,239,227,0.55)', fontSize: 13, lineHeight: 1.8, marginBottom: 20 }}>
+            Forwarded to the security administrator via S/MIME encrypted email. Upon approval:<br /><br />
+            <span style={{ color: 'rgba(244,239,227,0.8)' }}>① Encrypted Decoding Manual (email)</span><br />
+            <span style={{ color: 'rgba(244,239,227,0.8)' }}>② Manual password (separate SMS)</span><br />
+            <span style={{ color: 'rgba(244,239,227,0.8)' }}>③ DB credentials (time-limited link)</span>
+          </div>
+          <div style={{ fontFamily: 'var(--ff-mono)', fontSize: 9, color: 'rgba(244,239,227,0.2)', letterSpacing: '0.08em', marginBottom: 20 }}>
+            AUDIT-ID: BVIZ-{Date.now().toString(36).toUpperCase().slice(0, 8)}
+          </div>
+          <button onClick={() => setSubmitted(false)} className="login-btn" style={{ background: 'transparent', border: '1px solid rgba(244,239,227,0.15)', color: 'rgba(244,239,227,0.55)' }}>
+            Back to login
+          </button>
         </div>
-      </Panel>
+      </div>
     </div>
   );
 
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: C.bg0, backgroundImage: `radial-gradient(ellipse at 25% 50%, rgba(21,88,200,0.07) 0%,transparent 55%), radial-gradient(ellipse at 75% 50%, rgba(196,138,8,0.05) 0%,transparent 55%)` }}>
-      <div style={{ position: "fixed", inset: 0, backgroundImage: `linear-gradient(${C.border} 1px,transparent 1px),linear-gradient(90deg,${C.border} 1px,transparent 1px)`, backgroundSize: "48px 48px", opacity: 0.22, pointerEvents: "none" }} />
-      <div style={{ width: "100%", maxWidth: 400, padding: 20, animation: "fadein 0.5s ease", position: "relative", zIndex: 1 }}>
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 50, fontWeight: 700, letterSpacing: 6, color: C.goldBright, lineHeight: 1, animation: "glow-g 4s ease infinite" }}>BHELVIZ</div>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: C.textDim, letterSpacing: 4, marginTop: 6 }}>SECURE · READ-ONLY · VOICE-ENABLED · ZERO-TRUST</div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 10, flexWrap: "wrap" }}>
-            {["ADMIN-GATED", "AES-256-GCM", "ORACLE TDE", "IR-ONLY NLP", "4-PLANE ARCH"].map(t => <Badge key={t} bg={C.bg3} fg={C.textDim}>{t}</Badge>)}
-          </div>
-        </div>
-        <Panel style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ display: "flex", borderBottom: `1px solid ${C.border}` }}>
-            {["login", "register"].map(t => (
-              <div key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: "11px", textAlign: "center", cursor: "pointer", fontFamily: "'Playfair Display',serif", fontSize: 12, fontWeight: 600, letterSpacing: 2, color: tab === t ? C.goldBright : C.textDim, borderBottom: `2px solid ${tab === t ? C.goldBright : "transparent"}`, background: tab === t ? C.bg3 : C.bg2, transition: "all 0.2s", textTransform: "uppercase" }}>
-                {t === "login" ? "AUTHENTICATE" : "REQUEST ACCESS"}
-              </div>
+    <div className="login-root">
+      <div className="login-bg-orb" style={{ width: 600, height: 600, background: 'radial-gradient(circle, rgba(58,94,71,0.25) 0%, transparent 70%)', top: '-20%', right: '-10%' }} />
+      <div className="login-bg-orb" style={{ width: 400, height: 400, background: 'radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)', bottom: '-10%', left: '10%' }} />
+
+      <div className="login-panel">
+        <div className="login-logo-wrap">
+          <div className="login-logo">BHELVIZ</div>
+          <div className="login-subtitle">Secure · Read-Only · Zero-Trust</div>
+          <div className="login-chips">
+            {['Admin-gated', 'AES-256-GCM', 'Oracle TDE', 'IR-only NLP'].map(t => (
+              <span key={t} className="login-chip">{t}</span>
             ))}
           </div>
-          <div style={{ padding: 24 }}>
-            {tab === "login" ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <div>
-                  <div style={{ fontSize: 9, color: C.textDim, letterSpacing: 2, marginBottom: 5, fontFamily: "'JetBrains Mono',monospace" }}>IDENTITY</div>
-                  <Inp value={email} onChange={setEmail} placeholder="user@bhel.in" onKeyDown={e => e.key === "Enter" && doLogin()} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 9, color: C.textDim, letterSpacing: 2, marginBottom: 5, fontFamily: "'JetBrains Mono',monospace" }}>PASSPHRASE</div>
-                  <Inp value={pwd} onChange={setPwd} type="password" placeholder="••••••••" onKeyDown={e => e.key === "Enter" && doLogin()} />
-                </div>
-                <Btn onClick={doLogin} style={{ width: "100%", justifyContent: "center", padding: "10px", letterSpacing: 2, marginTop: 4 }}>AUTHENTICATE</Btn>
-                <div style={{ textAlign: "center", fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: C.textDim }}>
-                  Demo admin: <span style={{ color: C.goldBright }}>admin@bhel.in</span> / <span style={{ color: C.goldBright }}>admin</span><br />
-                  User demo: any @bhel.in email + ≥4 char password
+        </div>
+
+        <div className="login-card">
+          <div className="login-tabs">
+            {[['login', 'Authenticate'], ['register', 'Request access']].map(([id, label]) => (
+              <button key={id} className={`login-tab ${tab === id ? 'active' : ''}`} onClick={() => setTab(id)}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="login-body">
+            {tab === 'login' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <label className="login-label">Identity</label>
+                <input className="login-input" value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="user@bhel.in" onKeyDown={e => e.key === 'Enter' && doLogin()} />
+                <label className="login-label">Passphrase</label>
+                <input className="login-input" value={pwd} onChange={e => setPwd(e.target.value)}
+                  type="password" placeholder="••••••••" onKeyDown={e => e.key === 'Enter' && doLogin()} />
+                <button className="login-btn" onClick={doLogin}>Authenticate</button>
+                <div style={{ textAlign: 'center', marginTop: 16, fontFamily: 'var(--ff-mono)', fontSize: 9, color: 'rgba(244,239,227,0.2)', lineHeight: 1.8, letterSpacing: '0.04em' }}>
+                  Demo: admin@bhel.in / admin<br />
+                  User: any @bhel.in + ≥4 char password
                 </div>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <Inp value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} placeholder="Full name" />
-                <Inp value={email} onChange={setEmail} placeholder="email@bhel.in" />
-                <Inp value={form.dept} onChange={v => setForm(f => ({ ...f, dept: v }))} placeholder="Department" />
-                <textarea className="input-card" value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} placeholder="Business justification for access…"
-                  style={{ height: 96, fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }} />
-                <Btn onClick={() => { if (!form.name || !email || !form.reason) { notify("Fill all fields", "error"); return; } if (!email.endsWith("@bhel.in")) { notify("Must be a @bhel.in address", "error"); return; } setSubmitted(true); }} style={{ width: "100%", justifyContent: "center", letterSpacing: 2 }}>
-                  SUBMIT REQUEST
-                </Btn>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <label className="login-label">Full name</label>
+                <input className="login-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Your name" />
+                <label className="login-label">Email</label>
+                <input className="login-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@bhel.in" />
+                <label className="login-label">Department</label>
+                <input className="login-input" value={form.dept} onChange={e => setForm(f => ({ ...f, dept: e.target.value }))} placeholder="Department" />
+                <label className="login-label">Business justification</label>
+                <textarea className="login-input" value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
+                  placeholder="Why you need access…" style={{ height: 88, resize: 'none', marginBottom: 16 }} />
+                <button className="login-btn" onClick={() => {
+                  if (!form.name || !email || !form.reason) { notify('Fill all fields', 'error'); return; }
+                  if (!email.endsWith('@bhel.in')) { notify('Must be a @bhel.in address', 'error'); return; }
+                  setSubmitted(true);
+                }}>Submit request</button>
               </div>
             )}
           </div>
-        </Panel>
-        <div style={{ textAlign: "center", marginTop: 14, fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: C.textDim, letterSpacing: 1 }}>
+        </div>
+
+        <div className="login-footer">
           ALL ACCESS LOGGED · TLS 1.3 · ORACLE 19c · ZERO-TRUST ARCHITECTURE
         </div>
       </div>
@@ -588,7 +608,7 @@ function Dashboard({ userRole, onLogout, notify, token }) {
           type: envelope.type === 'hybrid' ? 'hybrid' : 'structured',
           content: structuredPayload.description || '',
           structured: {
-            data: { display, chart },
+            data: { display, chart, groupByField: irRes.group_by_field || null },
             chartType: structuredPayload.chart_type || irRes.chart_type || 'table',
             intent: structuredPayload.intent,
             description: structuredPayload.description,
@@ -609,7 +629,7 @@ function Dashboard({ userRole, onLogout, notify, token }) {
         const qres = runQuery(irRes, decrypted);
         display = qres.display; chart = qres.chart; rawCount = qres.rawCount;
         setResults({ display, chart, rawCount, intent: irRes.intent, desc: irRes.description });
-        const botMsg = { role: 'assistant', type: 'structured', structured: { data: { display, chart }, chartType: irRes.chart_type || 'table', intent: irRes.intent, description: irRes.description }, ts: new Date().toLocaleTimeString("en-IN") };
+        const botMsg = { role: 'assistant', type: 'structured', structured: { data: { display, chart, groupByField: irRes.group_by_field || null }, chartType: irRes.chart_type || 'table', intent: irRes.intent, description: irRes.description }, ts: new Date().toLocaleTimeString("en-IN") };
         setMessages(m => [...m, botMsg]);
       }
 
@@ -646,81 +666,145 @@ function Dashboard({ userRole, onLogout, notify, token }) {
     switch(currentNav) {
       case "dashboard":
         return (
-          <div style={{flex:1,display:'flex',flexDirection:'column'}}>
-            {/* Top header */}
-            <div style={{ padding: 12, borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, color: C.goldBright }}>BHELVIZ Dashboard</div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <Dot ok={true} />
-                <span className="small-muted">READ-ONLY · ORACLE 19c</span>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+
+            {/* ── Workspace header ── */}
+            <div className="workspace-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div className="workspace-title">Intelligence Dashboard</div>
+                <span className="badge badge-forest">Oracle 19c</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                {decrypted && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontFamily: 'var(--ff-mono)', color: 'var(--ink-faint)', letterSpacing: '0.06em' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--status-present)', boxShadow: '0 0 5px rgba(59,122,82,0.5)', display: 'inline-block' }} />
+                    READ-ONLY
+                  </span>
+                )}
+                <button
+                  onClick={onLogout}
+                  style={{ padding: '6px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-medium)', background: 'transparent', color: 'var(--ink-faint)', fontFamily: 'var(--ff-mono)', fontSize: 10, letterSpacing: '0.08em', cursor: 'pointer', transition: 'all 0.15s' }}
+                  onMouseEnter={e => { e.target.style.background = 'var(--forest-deep)'; e.target.style.color = 'var(--parchment)'; e.target.style.borderColor = 'var(--forest-deep)'; }}
+                  onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = 'var(--ink-faint)'; e.target.style.borderColor = 'var(--border-medium)'; }}
+                >
+                  LOGOUT
+                </button>
               </div>
             </div>
 
+            {/* ── Decoding manual bar ── */}
             {showManualBar && (
-              <div style={{ padding: 12 }}>
-                <div className="manual-bar glass" style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 12 }}>
-                  <div style={{ fontSize: 20 }}>🔐</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700 }}>Decoding Manual Required</div>
-                    <div className="small-muted">Enter your manual password to unlock client-side AES-256-GCM decryption.</div>
-                  </div>
-                  <input value={manualPwd} onChange={e => setManualPwd(e.target.value)} placeholder="Manual password" type="password" onKeyDown={e => e.key === 'Enter' && unlockManual()} className="manual-input" aria-label="Manual password" />
-                  <button className="unlock-btn" onClick={unlockManual} disabled={unlockingManual} aria-label="Unlock manual">{unlockingManual ? 'Unlocking…' : 'Unlock'}</button>
+              <div className="manual-bar">
+                <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-md)', background: 'rgba(201,168,76,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-warm)" strokeWidth="1.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
                 </div>
+                <div className="manual-text-wrap">
+                  <div className="manual-title">Decoding Manual required</div>
+                  <div className="manual-sub">Enter your password to unlock client-side AES-256-GCM decryption.</div>
+                </div>
+                <input
+                  value={manualPwd}
+                  onChange={e => setManualPwd(e.target.value)}
+                  placeholder="Manual password"
+                  type="password"
+                  onKeyDown={e => e.key === 'Enter' && unlockManual()}
+                  className="manual-input"
+                  aria-label="Manual password"
+                />
+                <button className="unlock-btn" onClick={unlockManual} disabled={unlockingManual} aria-label="Unlock">
+                  {unlockingManual ? 'Unlocking…' : 'Unlock'}
+                </button>
               </div>
             )}
 
+            {/* ── Main content row ── */}
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
               <ErrorBoundary>
-                <ChatWorkspace messages={messages} onSend={(txt)=>{ setQ(txt); execute(txt); }} inputValue={q} setInputValue={setQ} loading={loading} />
+                <ChatWorkspace
+                  messages={messages}
+                  onSend={(txt) => { setQ(txt); execute(txt); }}
+                  inputValue={q}
+                  setInputValue={setQ}
+                  loading={loading}
+                />
               </ErrorBoundary>
               <RightSidebar ir={ir} qHistory={qHistory} />
             </div>
           </div>
         );
-      
+
       case "analytics":
         return (
-          <div style={{flex:1,display:'flex',flexDirection:'column', padding: 20, overflow: 'auto'}}>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, color: C.goldBright, marginBottom: 20 }}>Analytics</div>
-            <Panel style={{ padding: 20, marginBottom: 20 }}>
-              <div style={{ color: C.textDim, fontSize: 14 }}>
-                <div style={{ marginBottom: 10 }}>📊 Advanced analytics features coming soon.</div>
-                <div>Monitor key metrics, trends, and system performance data with detailed visualizations.</div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+            <div className="workspace-header">
+              <div className="workspace-title">Analytics</div>
+            </div>
+            <div style={{ padding: '32px', maxWidth: 720 }}>
+              <div className="card" style={{ padding: '28px 32px', marginBottom: 16 }}>
+                <div style={{ fontFamily: 'var(--ff-display)', fontSize: 17, fontWeight: 500, color: 'var(--ink)', marginBottom: 8 }}>Advanced analytics</div>
+                <div style={{ color: 'var(--ink-faint)', fontSize: 13, lineHeight: 1.7 }}>
+                  Monitor key metrics, attendance trends, and system performance data with detailed visualizations.
+                  This view is being built — queries from the Dashboard are the primary interface for now.
+                </div>
               </div>
-            </Panel>
+            </div>
           </div>
         );
-      
+
       case "reports":
         return (
-          <div style={{flex:1,display:'flex',flexDirection:'column', padding: 20, overflow: 'auto'}}>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, color: C.goldBright, marginBottom: 20 }}>Reports</div>
-            <Panel style={{ padding: 20, marginBottom: 20 }}>
-              <div style={{ color: C.textDim, fontSize: 14 }}>
-                <div style={{ marginBottom: 10 }}>📋 Generate and manage detailed reports.</div>
-                <div>Create compliance reports, audit trails, and export data in multiple formats.</div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+            <div className="workspace-header">
+              <div className="workspace-title">Reports</div>
+            </div>
+            <div style={{ padding: '32px', maxWidth: 720 }}>
+              <div className="card" style={{ padding: '28px 32px' }}>
+                <div style={{ fontFamily: 'var(--ff-display)', fontSize: 17, fontWeight: 500, color: 'var(--ink)', marginBottom: 8 }}>Reports & exports</div>
+                <div style={{ color: 'var(--ink-faint)', fontSize: 13, lineHeight: 1.7 }}>
+                  Generate compliance reports, audit trails, and export results in CSV or JSON format.
+                  Use the Dashboard query interface to run a query, then copy the data using the Copy button in results.
+                </div>
               </div>
-            </Panel>
+            </div>
           </div>
         );
-      
+
       case "settings":
         return (
-          <div style={{flex:1,display:'flex',flexDirection:'column', padding: 20, overflow: 'auto'}}>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, color: C.goldBright, marginBottom: 20 }}>Settings</div>
-            <Panel style={{ padding: 20, marginBottom: 20 }}>
-              <div style={{ marginBottom: 15 }}>
-                <div style={{ fontWeight: 600, marginBottom: 10 }}>System Settings</div>
-                <div style={{ color: C.textDim, fontSize: 13 }}>User Role: <span style={{ color: C.textBright }}>{userRole?.toUpperCase() || 'USER'}</span></div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+            <div className="workspace-header">
+              <div className="workspace-title">Settings</div>
+            </div>
+            <div style={{ padding: '32px', maxWidth: 520 }}>
+              <div className="card" style={{ padding: '28px 32px' }}>
+                <div style={{ fontFamily: 'var(--ff-display)', fontSize: 17, fontWeight: 500, marginBottom: 20 }}>Session</div>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 24, fontSize: 13 }}>
+                  <div>
+                    <div style={{ fontFamily: 'var(--ff-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: 4 }}>Role</div>
+                    <div style={{ fontWeight: 500 }}>{userRole?.toUpperCase() || 'USER'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: 'var(--ff-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: 4 }}>Decryption</div>
+                    <div style={{ fontWeight: 500, color: decrypted ? 'var(--status-present)' : 'var(--status-absent)' }}>
+                      {decrypted ? 'Unlocked' : 'Locked'}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ paddingTop: 20, borderTop: '1px solid var(--border-light)' }}>
+                  <button
+                    onClick={onLogout}
+                    style={{ padding: '9px 20px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(166,50,40,0.3)', background: 'rgba(166,50,40,0.06)', color: 'var(--status-absent)', fontFamily: 'var(--ff-body)', fontSize: 13, cursor: 'pointer', transition: 'all 0.15s' }}
+                  >
+                    End session
+                  </button>
+                </div>
               </div>
-              <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${C.border}` }}>
-                <Btn onClick={onLogout} variant="err" style={{ fontSize: 12 }}>LOGOUT</Btn>
-              </div>
-            </Panel>
+            </div>
           </div>
         );
-      
+
       default:
         return null;
     }
@@ -728,7 +812,7 @@ function Dashboard({ userRole, onLogout, notify, token }) {
 
   return (
     <div className="fc-theme-app">
-      <Sidebar onNav={handleNavigation} />
+      <Sidebar onNav={handleNavigation} activeNav={currentNav} />
       {renderContent()}
     </div>
   );

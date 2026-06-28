@@ -9,3 +9,5 @@ Company leave policy:
 Attendance recording:
 - Late mark applies after 9:15 AM.
 - False present detection uses biometric and badge logs.
+
+

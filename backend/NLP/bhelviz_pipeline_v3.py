@@ -1108,6 +1108,7 @@ class BhelvizPipelineV3:
                 system = self._v2.NLP_SYSTEM_PROMPT.format(
                     schema_summary=self._v2._schema_summary(),
                     glossary=self._v2._glossary_summary(),
+                    context_block="none",
                 )
                 raw_ir = self._v2._call_nlp(system, utterance, conversation_history or [])
             except Exception as exc:

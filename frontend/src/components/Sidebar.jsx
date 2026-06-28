@@ -1,31 +1,88 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-function Icon({ name }){
-  // small set of inline icons
-  if(name==='dashboard') return (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 13h8V3H3v10zM13 21h8V11h-8v10zM13 3v6h8V3h-8zM3 21h8v-6H3v6z"/></svg>);
-  if(name==='analytics') return (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 3v18h18"/><rect x="7" y="7" width="3" height="10" rx="1"/><rect x="12" y="4" width="3" height="13" rx="1"/><rect x="17" y="10" width="3" height="7" rx="1"/></svg>);
-  if(name==='reports') return (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 7h18M3 12h18M3 17h18"/></svg>);
-  if(name==='settings') return (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 0 1 2.3 16.88l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09c.67 0 1.22-.41 1.51-1a1.65 1.65 0 0 0-.33-1.82L4.3 2.3A2 2 0 0 1 7.13.47l.06.06c.5.5 1.02.74 1.82.33.79-.4 1.51-1 1.51-1V3a2 2 0 0 1 4 0v.09c0 .67.41 1.22 1 1.51.8.41 1.32.17 1.82-.33l.06-.06A2 2 0 0 1 21.7 7.13l-.06.06c-.4.79-.74 1.02-.33 1.82.3.79 1 1.51 1 1.51H21a2 2 0 0 1 0 4h-.09c-.67 0-1.22.41-1.51 1z"/></svg>);
-  return null;
-}
+const NAV_ITEMS = [
+  {
+    id: 'dashboard', label: 'Dashboard',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+    )
+  },
+  {
+    id: 'analytics', label: 'Analytics',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+    )
+  },
+  {
+    id: 'reports', label: 'Reports',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+      </svg>
+    )
+  },
+  {
+    id: 'settings', label: 'Settings',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    )
+  },
+];
 
-export default function Sidebar({ onNav }){
+export default function Sidebar({ onNav, activeNav = 'dashboard' }) {
   return (
     <aside className="fc-theme-sidebar" aria-label="Main navigation">
-      <div>
+      <div className="sidebar-header">
         <div className="fc-theme-logo">BHELVIZ</div>
-        <div className="small-muted">Secure AI · Read‑Only</div>
+        <div className="sidebar-tagline">Secure Intelligence Platform</div>
       </div>
-      <nav className="fc-theme-nav" role="navigation" aria-label="Sidebar">
-        <button onClick={() => onNav && onNav('dashboard')} className="focus-outline" aria-label="Dashboard"><Icon name="dashboard" />&nbsp; Dashboard</button>
-        <button onClick={() => onNav && onNav('analytics')} className="focus-outline" aria-label="Analytics"><Icon name="analytics" />&nbsp; Analytics</button>
-        <button onClick={() => onNav && onNav('reports')} className="focus-outline" aria-label="Reports"><Icon name="reports" />&nbsp; Reports</button>
-        <button onClick={() => onNav && onNav('settings')} className="focus-outline" aria-label="Settings"><Icon name="settings" />&nbsp; Settings</button>
+
+      <nav className="fc-theme-nav" role="navigation">
+        {NAV_ITEMS.map(item => (
+          <button
+            key={item.id}
+            onClick={() => onNav && onNav(item.id)}
+            className={`focus-outline ${activeNav === item.id ? 'active' : ''}`}
+            aria-label={item.label}
+          >
+            <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
       </nav>
-      <div style={{marginTop:12}}>
-        <button onClick={() => onNav && onNav('new_chat')} className="send-btn" aria-label="New chat">+ New Chat</button>
+
+      <div className="sidebar-new-chat">
+        <button onClick={() => onNav && onNav('new_chat')} aria-label="Start new chat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          New conversation
+        </button>
       </div>
-      <div className="fc-theme-profile">Signed in as <strong>demo@bhel.in</strong></div>
+
+      <div className="sidebar-status">
+        <div className="sidebar-user-label">Signed in as</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="sidebar-dot" style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: 'var(--status-present)',
+            boxShadow: '0 0 6px rgba(59,122,82,0.6)',
+            animation: 'pulse-dot 2.5s ease-in-out infinite',
+            display: 'inline-block', flexShrink: 0,
+          }} />
+          <span className="sidebar-user-email">demo@bhel.in</span>
+        </div>
+      </div>
     </aside>
   );
 }
