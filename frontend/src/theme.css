@@ -373,7 +373,7 @@ body {
 
 .chat-input {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 12px;
   background: var(--cream);
   border: 1px solid var(--border-medium);
@@ -388,6 +388,7 @@ body {
   box-shadow: var(--shadow-glow);
 }
 
+/* LINES 391–404 — REPLACE the block with: */
 .chat-textarea {
   flex: 1;
   border: none;
@@ -398,8 +399,11 @@ body {
   font-size: 14px;
   color: var(--ink);
   line-height: 1.5;
+  min-height: 24px;        /* ADD: prevents collapse */
   max-height: 120px;
   overflow-y: auto;
+  padding-top: 6px;        /* ADD: nudges single-line text to visual center */
+  padding-bottom: 6px;     /* ADD: matching bottom */
 }
 
 .chat-textarea::placeholder { color: var(--ink-faint); }

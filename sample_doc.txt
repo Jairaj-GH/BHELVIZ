@@ -1,13 +1,631 @@
+BHEL ENTERPRISE POLICY DOCUMENT
+Bharat Heavy Electricals Limited — Human Resources & Administration Division
+Document Reference: BHEL/HRD/POL/2024-25 | Classification: Internal Use Only
+Effective Date: 01 April 2024 | Review Date: 31 March 2026
 
-BHELVIZ Policy Document
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1 — LEAVE POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Company leave policy:
-- Employees are entitled to 18 days of paid leave per year.
-- Leaves must be approved by manager; medical leaves require certificate.
-- For the Production department, additional safety training is required before extended leave.
+1.1 EARNED LEAVE (EL)
+All confirmed employees are entitled to 30 days of Earned Leave per calendar year,
+accrued at a rate of 2.5 days per month. Earned Leave can be accumulated up to a
+maximum of 240 days across an employee's service lifetime. Encashment of Earned
+Leave is permitted at the time of retirement, resignation, or death of the employee,
+subject to a maximum of 300 days. EL application must be submitted at least 7 working
+days in advance except in cases of genuine emergency. EL cannot be combined with
+Casual Leave in a single stretch.
 
-Attendance recording:
-- Late mark applies after 9:15 AM.
-- False present detection uses biometric and badge logs.
+1.2 CASUAL LEAVE (CL)
+Each employee is entitled to 8 days of Casual Leave per financial year. CL is not
+carry-forwardable and lapses at the end of the financial year on 31st March. CL cannot
+be taken for more than 3 consecutive days at a stretch. CL cannot be combined with
+EL, Medical Leave, or public holidays to extend a vacation. CL must be applied for
+and approved in the HR portal before availing, except in genuine emergencies where it
+may be applied within 24 hours of return.
 
+1.3 MEDICAL / SICK LEAVE (ML)
+Employees are entitled to 10 days of Medical Leave per year on full pay. Medical Leave
+beyond 3 consecutive days requires a certificate from a registered medical practitioner.
+ML beyond 10 days in a year will be treated as Leave on Loss of Pay (LOP) unless the
+employee has accumulated Earned Leave which can be set off. For hospitalisations
+exceeding 7 days, the employee must submit a fitness-for-duty certificate from the
+company-empanelled physician before resuming duty. ML is fully carry-forwardable up
+to a maximum of 120 days over the service period.
 
+1.4 MATERNITY LEAVE (MAT)
+Female employees are entitled to 26 weeks of paid Maternity Leave for the first two
+children as per the Maternity Benefit (Amendment) Act, 2017. For a third child or
+subsequent children, Maternity Leave is 12 weeks. Maternity Leave may commence
+from 8 weeks before the expected date of delivery and the remaining balance after
+delivery. In case of adoption of a child below 3 months of age, the adoptive mother
+is entitled to 12 weeks of paid Maternity Leave from the date of adoption. A
+miscarriage or medical termination of pregnancy entitles the employee to 6 weeks of
+leave with pay on production of a medical certificate. Maternity Leave is not deducted
+from any other leave account.
+
+1.5 PATERNITY LEAVE (PAT)
+Male employees are entitled to 15 days of paid Paternity Leave on the occasion of
+the birth or legal adoption of a child, to be availed within 3 months of birth or
+adoption. Paternity Leave can be taken in one continuous stretch or split into two
+parts. Paternity Leave is available for a maximum of two children. It is not
+carry-forwardable and lapses if not availed within the stipulated 3-month window.
+
+1.6 SPECIAL LEAVE FOR PERSONS WITH DISABILITIES (PwD)
+Employees certified as Persons with Disabilities under the Rights of Persons with
+Disabilities Act, 2016 are entitled to an additional 10 days of Special Leave per year
+for medical treatment, disability-related appointments, assistive technology
+procurement, and rehabilitation. This leave is non-carry-forwardable and separate
+from all other leave entitlements.
+
+1.7 LEAVE WITHOUT PAY (LWP / LOP)
+An employee may be granted Leave Without Pay at the discretion of the competent
+authority when all other leave balances have been exhausted. LWP affects the
+employee's continuity of service for the purpose of benefits calculation. Continuous
+LWP exceeding 30 days without approval will be treated as unauthorised absence and
+may attract disciplinary action. Pro-rata salary deduction is applied for LWP days.
+
+1.8 SPECIAL CASUAL LEAVE (SCL)
+Special Casual Leave of up to 10 days per year is granted for:
+- Blood donation (1 day per donation)
+- Appearing in departmental or government examinations (duration of exam)
+- Participation in national/state level sports events on behalf of the company or
+  a recognized sports federation (duration of event + 2 days travel)
+- Participation in disaster relief activities certified by a government authority
+SCL does not count against the CL balance and is not carry-forwardable.
+
+1.9 HALF-DAY LEAVE
+Employees may apply for half-day leave (first half: before 1:30 PM; second half:
+after 1:30 PM). Half-day leave is deducted as 0.5 days from the applicable leave
+account. A maximum of 2 half-day leaves may be combined to form 1 full day of leave.
+Half-day leave cannot be availed on days when the employee is scheduled for shift
+duty beginning before 6 AM or ending after 10 PM.
+
+1.10 COMPENSATORY OFF (COMP-OFF)
+Employees who work on a declared holiday or on a weekly-off day at the direction of
+their department head are entitled to a compensatory off day within 30 days of the
+working day. Comp-off must be availed within 60 days of accrual and cannot be
+carried forward beyond that. Comp-off is tracked in the attendance management system
+and requires the approving manager to certify the extra working day.
+
+1.11 LEAVE DURING PROBATION
+Employees on probation (first 12 months of service) are entitled to only CL and ML;
+EL does not accrue during probation. However, upon confirmation, EL is credited
+retrospectively for the probation period at the standard accrual rate.
+
+1.12 LEAVE COMBINATION RULES SUMMARY
+Permitted combinations: EL + Public Holiday, ML + Public Holiday, EL + Comp-Off.
+Prohibited combinations: CL + EL in one stretch, CL + ML in one stretch,
+Maternity Leave + any other leave.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2 — ATTENDANCE POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+2.1 SHIFT TIMINGS
+The following shifts are in operation across all BHEL divisions:
+
+  Morning Shift   : 06:00 AM – 02:00 PM
+  Afternoon Shift : 02:00 PM – 10:00 PM
+  Night Shift     : 10:00 PM – 06:00 AM (next day)
+  General Shift   : 09:00 AM – 05:30 PM (applicable to administrative staff,
+                    HR, Finance, IT, and R&D divisions)
+
+2.2 GRACE PERIOD AND LATE MARK
+A grace period of 15 minutes is permitted beyond the scheduled shift start time.
+Any arrival after the grace period is recorded as LATE in the attendance system.
+Three late marks in a calendar month result in deduction of half a day's salary.
+Six or more late marks in a calendar month result in deduction of one full day's
+salary. Employees who are late by more than 2 hours without prior intimation are
+marked HALF-DAY ABSENT. Employees who arrive after half of the shift has elapsed
+without any prior leave application or intimation are marked ABSENT for that day.
+
+2.3 BIOMETRIC ATTENDANCE SYSTEM
+All employees are required to record attendance using the company-installed biometric
+fingerprint and face recognition system at the designated entry/exit terminals.
+Dual-swipe is mandatory — both entry and exit must be recorded. Failure to swipe
+out is treated as an exception and requires manager certification within 48 hours
+else the day is marked as a half-day attendance. Repeated failures to record
+biometric attendance (more than 5 in a month) attract a written warning. Proxy
+biometric registration (registering fingerprints for another employee) is classified
+as a major misconduct under the Disciplinary Policy and attracts suspension pending
+an enquiry.
+
+2.4 FALSE ATTENDANCE / BUDDY PUNCHING DETECTION
+BHELVIZ employs a multi-layer false attendance detection mechanism:
+- Badge RFID log cross-referenced with biometric record
+- CCTV correlation analysis for entry/exit gate passages
+- Machine learning anomaly detection on shift-start and shift-end patterns
+- Cross-check between canteen swipe records and attendance records
+
+Any discrepancy between the badge log and biometric log on the same day generates
+an automatic exception flagged in the system as EXCEPTION_BIOMETRIC_MISMATCH.
+Employees with more than 3 such exceptions in a month are automatically escalated
+to the Security department for investigation. Confirmed cases of false attendance
+are treated as gross misconduct attracting major penalty up to and including
+termination of service.
+
+2.5 ATTENDANCE STATUS CODES (BHELVIZ System)
+  PRESENT        : Employee recorded valid entry and exit biometrics within shift window
+  ABSENT         : No biometric record; no approved leave on record
+  LATE           : Entry biometric recorded after grace period but within 2 hours of shift start
+  FALSE_PRESENT  : System or investigation has flagged the attendance record as potentially falsified
+  ON_LEAVE       : Approved leave (any category) covering this work day
+  HALF_DAY       : Employee present for less than half the shift duration
+  COMP_OFF       : Employee availing approved compensatory off
+  HOLIDAY        : National/State/company-declared holiday
+  WO             : Weekly Off (as per roster)
+
+2.6 ATTENDANCE REGULARISATION
+An employee may regularise attendance for a maximum of 2 days per month where
+genuine technical failures in the biometric system occurred, subject to manager
+approval and confirmation from the IT/Security team. Regularisation must be applied
+within 5 working days of the affected date. Retrospective regularisation beyond
+30 days is not permitted under any circumstances.
+
+2.7 REMOTE WORK / WORK FROM HOME (WFH) ATTENDANCE
+Employees approved for WFH under the BHEL Hybrid Work Policy must log attendance
+via the secure VPN portal between 09:00 AM and 09:30 AM. WFH attendance is marked
+as PRESENT in the system once the VPN login and the mandatory morning check-in form
+are completed. Non-compliance with WFH attendance procedures will result in the day
+being marked as Leave Without Pay. WFH is not permitted for shift-category employees
+(Morning, Afternoon, Night shifts) engaged in manufacturing or plant operations.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3 — SALARY, ALLOWANCES & BENEFITS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+3.1 SALARY COMPONENTS
+The Cost to Company (CTC) for all employees is broken into:
+  Basic Pay            : 40% of CTC
+  House Rent Allowance : 24% of Basic Pay (metro cities), 16% of Basic Pay (non-metro)
+  Dearness Allowance   : Revised quarterly based on All India Consumer Price Index (AICPI);
+                         currently at 46.5% of Basic Pay (as of Q1 FY2024-25)
+  Transport Allowance  : Rs. 3,200/month for Grade E1–E3; Rs. 4,800/month for E4 and above
+  Medical Allowance    : Rs. 1,500/month (reimbursed against bills) for all employees
+  Special Allowance    : Variable component to gross up CTC; paid monthly
+  Performance Bonus    : Paid annually; linked to company PAT and individual PMS rating
+
+3.2 NIGHT SHIFT ALLOWANCE
+Employees working the Night Shift (10 PM – 6 AM) are entitled to a Night Shift
+Allowance of Rs. 250 per night shift worked, in addition to their regular salary
+components. Night Shift Allowance is not applicable for voluntary night-shift swaps
+that are not part of the official roster. A maximum of 26 night shifts are payable
+in a calendar month.
+
+3.3 OVERTIME POLICY
+Overtime is applicable to workmen-grade employees (Grade W1–W6) only. Officers and
+executives are not eligible for overtime pay. Overtime is computed at 2x the hourly
+Basic Pay rate. Prior sanction from the department head is mandatory before overtime
+can be claimed. Maximum permissible overtime is 50 hours per month as per the
+Factories Act provisions. Overtime worked beyond the sanctioned hours without prior
+approval will not be reimbursed.
+
+3.4 PERFORMANCE MANAGEMENT SYSTEM (PMS) AND ANNUAL INCREMENT
+The Performance year runs from 01 April to 31 March. Annual performance reviews are
+conducted in April–May each year. PMS ratings are on a 5-point scale:
+  5 — Outstanding  : Increment of 12–15% of Basic Pay
+  4 — Very Good    : Increment of 8–11% of Basic Pay
+  3 — Good         : Increment of 5–7% of Basic Pay
+  2 — Satisfactory : Increment of 2–4% of Basic Pay
+  1 — Unsatisfactory : No increment; eligible for Performance Improvement Plan (PIP)
+
+Employees on LWP for more than 90 days in the appraisal year receive a proportional
+pro-rating of their increment. Employees under active disciplinary proceedings are
+not eligible for any increment until the proceedings are closed.
+
+3.5 PROVIDENT FUND (PF)
+Employee contribution to PF is 12% of Basic Pay. Employer contribution is also 12%
+of Basic Pay, split as: 3.67% to EPF account and 8.33% to EPS (Pension Scheme).
+PF is deducted at source and remitted to EPFO by the 15th of the following month.
+Employees may voluntarily contribute up to 100% of Basic Pay as Voluntary Provident
+Fund (VPF) in addition to the statutory 12%.
+
+3.6 GRATUITY
+Employees who have completed a minimum of 5 years of continuous service are eligible
+for Gratuity as per the Payment of Gratuity Act, 1972. Gratuity is calculated as:
+(Last drawn Basic Pay + DA) × 15/26 × Number of completed years of service.
+Gratuity is payable on superannuation, resignation, death, or permanent disability.
+In case of death or permanent disability, the 5-year minimum service condition is
+waived.
+
+3.7 MEDICAL REIMBURSEMENT AND HEALTH INSURANCE
+All employees and their declared dependents (spouse, children up to age 25, and
+dependent parents) are covered under the BHEL Group Medical Insurance Scheme with a
+sum insured of Rs. 5,00,000 per family per year. Maternity cover of Rs. 75,000 per
+delivery is included. Pre-existing diseases are covered after a waiting period of
+12 months from the date of policy enrolment. OPD expenses are reimbursable up to
+Rs. 15,000 per year against original bills submitted to HR within 30 days of the
+expense. Hospitalisation claims must be filed within 60 days of discharge.
+
+3.8 LEAVE TRAVEL CONCESSION (LTC)
+Employees are entitled to LTC once every two years for travel within India. The
+entitlement covers the employee, spouse, and up to two dependent children. Travel
+by the shortest route by air (Economy class) or rail (AC-II class) is reimbursable.
+LTC must be availed in conjunction with at least 5 days of Earned Leave. LTC cannot
+be encashed (except in the block year concession scheme under Income Tax provisions
+for government employees, which does not apply here). Claims must be submitted
+within 3 months of return with original tickets and boarding passes.
+
+3.9 CHILDREN'S EDUCATION ALLOWANCE
+Employees are entitled to a Children's Education Allowance of Rs. 2,250 per month
+per child for a maximum of 2 children, applicable from nursery/pre-primary through
+Class XII (up to age 20 for children with disabilities). This is a reimbursement
+allowance; fee receipts from a recognised school must be submitted twice a year.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4 — DISCIPLINARY POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+4.1 MINOR MISCONDUCT (ATTRACTS MINOR PENALTY)
+The following are classified as minor misconducts:
+- Habitual late attendance (more than 8 late marks in a calendar month)
+- Absence without intimation for 1–3 days
+- Failure to follow the dress code or safety gear policy
+- Negligence in maintaining attendance biometric records
+- Disrespectful communication in writing to a peer
+- Misuse of company equipment for personal use on isolated occasions
+
+Minor penalties include: Written Warning, Withholding of annual increment for up
+to 12 months, Fine not exceeding Rs. 2,000.
+
+4.2 MAJOR MISCONDUCT (ATTRACTS MAJOR PENALTY)
+The following are classified as major misconducts:
+- Absence without authorisation for more than 5 consecutive working days
+- False attendance / proxy biometric registration
+- Theft, misappropriation, or destruction of company property
+- Wilful insubordination or disobedience of lawful orders
+- Sexual harassment of any employee or visitor
+- Disclosure of confidential company information to unauthorised persons
+- Fraud, forgery, or misrepresentation in company records or claims
+- Physical assault or threatening behaviour towards any person on company premises
+- Reporting to duty under the influence of alcohol or narcotic substances
+- Sabotage of company equipment, plant, or production processes
+
+Major penalties include: Suspension from service without pay (up to 120 days
+pending enquiry), Reduction in grade or pay, Termination from service with notice,
+Dismissal from service without notice and with forfeiture of gratuity.
+
+4.3 DISCIPLINARY ENQUIRY PROCEDURE
+Upon identification of a potential major misconduct, the following procedure applies:
+Step 1: Department Head issues an order of suspension (if required for custody of
+        evidence or to prevent recurrence) and a Chargesheet to the employee.
+Step 2: The employee submits a written reply to the Chargesheet within 10 working days.
+Step 3: An Enquiry Officer (not from the employee's own department) is appointed.
+Step 4: Enquiry is conducted with opportunity to the employee to be heard, produce
+        witnesses, and cross-examine management witnesses. Legal representation
+        is not permitted during the enquiry, though a departmental colleague may assist.
+Step 5: The Enquiry Officer submits the Enquiry Report within 45 days of appointment.
+Step 6: The Disciplinary Authority reviews the report and may agree or disagree with
+        findings, with reasons recorded in writing.
+Step 7: A show-cause notice is issued to the employee before a major penalty is imposed.
+Step 8: The employee's response is considered before final order is passed.
+The employee has a right to appeal to the Appellate Authority within 30 days of the
+disciplinary order.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5 — SAFETY POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5.1 MANDATORY SAFETY TRAINING
+All new employees joining the Manufacturing, Boiler Division, Transmission, and
+Power Systems divisions must complete a mandatory 3-day Safety Induction Training
+within the first 30 days of joining. No employee is permitted to work on the shop
+floor or plant area until the safety induction is completed and certified.
+
+Refresher safety training is mandatory every 2 years for all employees in the above
+divisions. Employees who miss the refresher training in the due year are barred from
+working in safety-critical areas until the training is completed.
+
+5.2 PERSONAL PROTECTIVE EQUIPMENT (PPE)
+Employees in manufacturing, plant operations, and site roles are required to wear
+all mandated PPE at all times on the shop floor, including: safety helmet, steel-toed
+boots, high-visibility vest, safety goggles, ear defenders (in noise zones above
+85 dB), and insulated gloves when working with electrical equipment above 110V.
+Non-compliance with PPE requirements attracts a written warning for first offence,
+a salary penalty of Rs. 1,000 for second offence, and suspension from shop floor
+duties for 3 working days for third offence.
+
+5.3 INCIDENT REPORTING
+Any work-related accident, near-miss, or unsafe condition must be reported to the
+immediate supervisor and the Safety Officer within 1 hour of the incident. Formal
+incident report must be submitted in the EHS portal within 8 hours. Failure to report
+an accident or near-miss is treated as a minor misconduct. In case of an injury that
+requires medical treatment beyond first aid, the Safety Officer initiates an Incident
+Investigation within 24 hours. All reportable accidents (as defined under the Factories
+Act) are reported to the relevant government authority within the statutory timeline.
+
+5.4 FIRE SAFETY
+All employees must complete the annual Fire Safety Awareness module (45 minutes,
+online, mandatory). Evacuation drills are conducted at least twice a year at each
+plant and office location. Tamper with or obstruct fire safety equipment (extinguishers,
+hydrants, sprinkler systems, smoke detectors) is a major misconduct.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6 — TRANSFER AND POSTING POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+6.1 GENERAL PROVISIONS
+BHEL reserves the right to transfer any employee to any unit, division, department,
+or project location in India or abroad in the interest of business. An employee
+cannot claim permanency at any particular place of posting.
+
+6.2 NOTICE FOR TRANSFER
+In normal circumstances, a minimum of 30 days advance notice is given for transfers.
+In cases of urgent operational requirement, transfers may take effect with 7 days'
+notice. Employees posted to project sites of duration less than 6 months are treated
+as On Deputation and continue to retain their parent unit for all HR purposes.
+
+6.3 TRANSFER ALLOWANCE
+Upon transfer requiring relocation, the following entitlements apply:
+- Transfer Allowance: One month's Basic Pay (paid once per transfer)
+- Packing and Transportation of household goods: Actuals up to Rs. 75,000 for Grade
+  E3 and below; Rs. 1,25,000 for Grade E4 and above; Rs. 2,00,000 for Grade E7 and above
+- Joining Time: 6 days for inter-city transfers within India; 10 days for transfers
+  involving relocation beyond 1,500 km; 15 days for international assignments
+- House Rent Allowance: Applicable at the new location rate from date of joining
+
+6.4 HARDSHIP POSTING ALLOWANCE
+Postings to defined remote/hardship locations (notified list published by HRD
+annually) attract an additional Hardship Allowance of 10–25% of Basic Pay depending
+on the hardship category (A, B, or C) of the location.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7 — RETIREMENT AND SEPARATION POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+7.1 SUPERANNUATION AGE
+The age of superannuation for all categories of employees is 60 years. Employees
+attain superannuation on the last day of the month in which they complete 60 years
+of age. There is no provision for extension of service beyond 60 years for regular
+employees.
+
+7.2 VOLUNTARY RETIREMENT SCHEME (VRS)
+Employees who have completed 20 years of service or attained the age of 50 years
+are eligible to apply for Voluntary Retirement. VRS benefits include:
+- Ex-gratia payment: 45 days of Basic Pay + DA for each completed year of service
+  (subject to maximum of monthly Basic Pay + DA × 60 months or the amount payable
+  for the remaining service years, whichever is less)
+- All terminal benefits (Gratuity, PF, Leave encashment) are paid simultaneously
+- CGHS / medical cover is extended for 5 years post-VRS at concessional rates
+
+7.3 RESIGNATION
+An employee seeking to resign must serve a notice period as follows:
+  Grade W1–W3  : 30 days
+  Grade W4–W6  : 45 days
+  Grade E1–E4  : 60 days
+  Grade E5–E8  : 90 days
+Shorter notice may be accepted at the discretion of the Competent Authority on
+payment of salary in lieu of the notice period shortfall. An employee on probation
+must give 14 days' notice. Resignation once submitted cannot be withdrawn after
+acceptance by the Competent Authority. Full and Final Settlement (F&FS) is processed
+within 45 working days of the last working day.
+
+7.4 TERMINAL BENEFITS ON RESIGNATION
+Employees who resign after completing 5 years of continuous service are entitled to:
+- Gratuity (as per Section 3.6)
+- Earned Leave encashment (up to 240 days)
+- Provident Fund withdrawal or transfer
+Employees who resign before completing 5 years of service are not entitled to
+Gratuity but are entitled to PF and EL encashment.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8 — CODE OF CONDUCT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+8.1 GENERAL CONDUCT
+All employees are expected to conduct themselves with integrity, honesty, and
+professionalism at all times, including outside of working hours when representing
+BHEL in any capacity. Employees must not indulge in activities that bring disrepute
+to the company or conflict with the company's interests.
+
+8.2 CONFLICT OF INTEREST
+Employees must declare any financial or personal interest that may conflict with their
+duties to BHEL. This includes directorships, partnerships, or significant shareholding
+(>1%) in any company that is a vendor, customer, or competitor of BHEL. Annual
+Conflict of Interest declarations must be submitted to HR by 30 April each year. Failure
+to declare a conflict of interest is treated as misconduct.
+
+8.3 GIFTS AND HOSPITALITY
+Employees may not accept gifts, cash, vouchers, or entertainment from vendors,
+contractors, or any business associates beyond a nominal threshold of Rs. 1,000 in
+value. Gifts above this threshold must be declared to the Chief Vigilance Officer
+and either returned or deposited with the company. Festival gifts collectively from
+a business associate above Rs. 2,500 are also covered by this policy.
+
+8.4 SOCIAL MEDIA POLICY
+Employees must not post, share, or publish any internal company information,
+financial data, project details, or customer information on any social media platform
+without written approval from the Corporate Communications department. Critical or
+disparaging posts about BHEL, its leadership, products, or employees on public
+platforms are subject to disciplinary action. Personal opinions must be clearly
+marked as personal and must not be construed as representing BHEL's views.
+
+8.5 ANTI-SEXUAL HARASSMENT POLICY (POSH)
+BHEL maintains a zero-tolerance policy towards sexual harassment in the workplace as
+per the Sexual Harassment of Women at Workplace (Prevention, Prohibition and
+Redressal) Act, 2013. An Internal Complaints Committee (ICC) is constituted at every
+unit/division with a minimum of 4 members, of which at least half are women and the
+presiding officer is a senior woman employee. Complaints must be filed with the ICC
+within 90 days of the incident. The ICC must complete its inquiry within 60 days of
+receipt of the complaint. Interim relief (transfer, special leave) may be granted
+to the complainant pending inquiry. Confidentiality of all parties is strictly
+maintained. False complaints made with malicious intent also attract disciplinary action.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9 — TRAINING AND DEVELOPMENT POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+9.1 MANDATORY TRAINING HOURS
+Each employee is required to complete a minimum of 40 training hours per financial
+year, including mandatory compliance modules (ethics, POSH, safety, cybersecurity)
+and functional/technical skill development programmes. Training hours are tracked
+in the HR Learning Management System (LMS).
+
+9.2 EXTERNAL TRAINING AND CONFERENCES
+Employees may apply for sponsorship to attend external training programmes,
+conferences, seminars, or certification courses subject to budget availability and
+relevance to their role. Applications must be approved by the Department Head and
+HR at least 30 days before the programme date. Post-training, employees must submit
+a learning report within 7 working days and share key learnings with their team.
+Employees who leave BHEL within 2 years of an externally sponsored certification
+costing more than Rs. 50,000 must refund a proportional cost to the company (full
+refund if leaving within 1 year, 50% if leaving in year 2).
+
+9.3 HIGHER EDUCATION SPONSORSHIP
+Employees who have completed 3 years of service may apply for sponsorship for
+part-time or distance-learning postgraduate programmes relevant to their function.
+BHEL reimburses up to Rs. 1,50,000 per year towards tuition fees for approved
+programmes. A service bond of 3 years post-completion of the programme is required.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 10 — GRIEVANCE REDRESSAL POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+10.1 GRIEVANCE DEFINITION
+A grievance is any dissatisfaction or sense of injustice felt by an employee in
+connection with their employment situation: pay, working conditions, leave, promotion,
+transfer, disciplinary action, workload, or interpersonal conflict with colleagues
+or supervisors.
+
+10.2 GRIEVANCE PROCEDURE
+Step 1 — Informal resolution: Employee discusses the grievance with their immediate
+         supervisor within 5 working days of the grievance arising. The supervisor
+         must respond within 5 working days.
+Step 2 — Formal grievance: If unresolved, employee submits a written grievance form
+         to the HR department within 10 working days of the supervisor's response (or
+         non-response). HR acknowledges within 3 working days.
+Step 3 — HR inquiry and resolution: HR investigates and provides a written response
+         within 15 working days. HR may convene a Grievance Redressal Committee for
+         complex matters.
+Step 4 — Appellate authority: If the employee is unsatisfied, they may escalate to
+         the Unit HR Head within 10 working days. Decision at this level is final within
+         the company's internal mechanism.
+
+10.3 WHISTLEBLOWER / VIGIL MECHANISM
+Employees may report suspected fraud, corruption, or policy violations through the
+BHEL Vigilance hotline (1800-XXX-BHEL) or the secure email (vigilance@bhel.in).
+Anonymous complaints are accepted. The Vigilance Department investigates all
+complaints and maintains confidentiality to the maximum extent practicable. Victimisation
+of a whistleblower is a major misconduct.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 11 — IT AND DATA SECURITY POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+11.1 ACCEPTABLE USE OF IT RESOURCES
+Company IT assets (laptops, desktops, mobile devices, email accounts, intranet,
+VPN, licensed software) are to be used primarily for official purposes. Incidental
+personal use is permitted provided it does not interfere with work, consume excessive
+bandwidth, violate other policies, or access prohibited content (gambling, adult
+content, piracy, hate speech). All activity on company IT systems is subject to
+monitoring.
+
+11.2 PASSWORD AND ACCOUNT SECURITY
+Passwords must be a minimum of 12 characters and contain at least one uppercase
+letter, one lowercase letter, one numeral, and one special character. Passwords must
+be changed every 90 days. System-enforced password history prevents reuse of the
+last 12 passwords. Sharing of login credentials with colleagues is strictly prohibited.
+MFA (Multi-Factor Authentication) is mandatory for all remote access (VPN, Outlook
+Web Access, and all cloud-based applications).
+
+11.3 DATA CLASSIFICATION AND HANDLING
+BHEL data is classified into four levels:
+  PUBLIC        : May be shared externally (press releases, published reports)
+  INTERNAL      : For BHEL employees only; not for external circulation
+  CONFIDENTIAL  : Restricted to specific departments or project teams; must be
+                  encrypted in transit and at rest
+  SECRET        : Defence-related or extremely sensitive commercial data;
+                  access requires explicit authorisation from a designated authority
+
+Employee attendance data in BHELVIZ is classified as CONFIDENTIAL. Access to
+BHELVIZ is restricted to authorised users who have completed the security onboarding
+process and received an approved BHELVIZ access credential.
+
+11.4 CYBERSECURITY INCIDENT REPORTING
+Any suspected cybersecurity incident (phishing email received, device lost or stolen,
+unauthorised access to company system, malware infection) must be reported to the
+IT Security helpdesk (security@bhel.in) within 1 hour of awareness. The IT Security
+team will issue a ticket and commence investigation within 2 hours during business
+hours.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 12 — TRAVEL POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+12.1 DOMESTIC TRAVEL ENTITLEMENT BY GRADE
+  Grade W1–W3 : Train (Sleeper/3AC), Budget hotel up to Rs. 1,200/night,
+                Daily Allowance Rs. 500/day
+  Grade W4–W6 : Train (2AC), Hotel up to Rs. 2,000/night, DA Rs. 700/day
+  Grade E1–E3 : Train (1AC) or Economy air, Hotel up to Rs. 3,500/night, DA Rs. 1,000/day
+  Grade E4–E6 : Economy air, Hotel up to Rs. 5,500/night, DA Rs. 1,500/day
+  Grade E7+   : Business air (flights > 2 hours), Hotel up to Rs. 9,000/night, DA Rs. 2,000/day
+
+12.2 INTERNATIONAL TRAVEL
+International travel requires approval from Division Head and CFO for all grades.
+Business class is permitted for all grades on flights exceeding 7 hours. Per diem
+for international travel is as per the Ministry of Finance prescribed rates for
+the country of travel. A travel insurance policy must be activated for all
+international trips through the company's empanelled insurer.
+
+12.3 TRAVEL ADVANCE AND EXPENSE REIMBURSEMENT
+Travel advances (up to 80% of estimated expense) may be drawn from Finance 3 working
+days before travel. All expense claims must be submitted with original bills within
+10 working days of return. Unsubstantiated or unsupported claims will be rejected.
+Outstanding travel advances not settled within 30 days will be deducted from salary.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUICK REFERENCE: COMMON POLICY ANSWERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Q: How many days of Earned Leave am I entitled to per year?
+A: 30 days per calendar year, accrued at 2.5 days per month.
+
+Q: What is the maximum EL I can accumulate?
+A: 240 days across the service lifetime; encashment on exit up to 300 days.
+
+Q: How many Casual Leaves do I get?
+A: 8 days per financial year; non-carry-forwardable; lapses on 31 March.
+
+Q: Can I combine CL with EL?
+A: No. CL and EL cannot be combined in a single stretch.
+
+Q: What is the grace period for attendance?
+A: 15 minutes beyond the scheduled shift start time.
+
+Q: How many late marks lead to a salary deduction?
+A: 3 late marks = half-day deduction; 6 or more = full-day deduction in a month.
+
+Q: Am I entitled to maternity leave for a third child?
+A: Yes, but only 12 weeks (not 26 weeks which applies to the first two children).
+
+Q: What is the paternity leave entitlement?
+A: 15 days of paid leave, availed within 3 months of birth or adoption, for up to 2 children.
+
+Q: What happens if I have false attendance recorded?
+A: It is classified as a major misconduct and can result in suspension or termination.
+
+Q: What is the retirement age?
+A: 60 years for all employee categories.
+
+Q: What is the notice period for Grade E4?
+A: 60 days.
+
+Q: Am I eligible for overtime?
+A: Only workmen-grade employees (W1–W6) are eligible for overtime at 2x hourly Basic Pay.
+
+Q: What PPE is mandatory on the shop floor?
+A: Safety helmet, steel-toed boots, high-visibility vest, safety goggles, ear defenders
+   in noise zones, and insulated gloves when working with electrical equipment above 110V.
+
+Q: How do I regularise an attendance exception?
+A: Apply within 5 working days of the affected date; maximum 2 regularisations per month.
+
+Q: What is the maximum night shifts payable in a month?
+A: 26 night shifts. Night Shift Allowance is Rs. 250 per night.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+END OF DOCUMENT
+Document controlled by BHEL HRD Policy Cell. Printed copies are uncontrolled.
+For the latest version, refer to the BHEL Intranet Policy Repository.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

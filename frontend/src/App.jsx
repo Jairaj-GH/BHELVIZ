@@ -573,24 +573,47 @@ function Dashboard({ userRole, onLogout, notify, token }) {
         irRes = structuredPayload.ir || structuredPayload.structured_ir || {};
         rows  = structuredPayload.rows || [];
 
-        display = rows.map(r => ({
-          'Emp No':     r.employee_no  || r.emp_id      || '',
-          'Name':       r.full_name    || r.employee_name || '',
-          'Department': r.dept_name    || r.dept_code   || r.department || '',
-          'Role':       r.current_role_code || r.role   || '',
-          'Shift':      r.shift        || r.shift_code  || r.shift_name || '',
-          'Status':     r.status       || r.attendance_status || '',
-          'Att. Date':  r.att_date     || r.attendance_ts || null,
-          'Penalty':    (r.penalty !== undefined && r.penalty !== null) ? r.penalty
-                        : (r.attendance_penalty !== undefined ? r.attendance_penalty : '—'),
-        }));
+        // Detect grouped/aggregated result: has numeric aggregate column, no employee_id
+        const isGrouped = rows.length > 0 &&
+          Object.keys(rows[0]).some(k => typeof rows[0][k] === 'number') &&
+          !('employee_no' in rows[0]) && !('emp_id' in rows[0]) && !('full_name' in rows[0]);
 
-        const map = {};
-        rows.forEach(r => {
-          const k = r.status || r.attendance_status || r.attendance_status_code || 'UNKNOWN';
-          map[k] = (map[k] || 0) + 1;
-        });
-        chart = Object.entries(map).map(([name, value]) => ({ name, value }));
+        if (isGrouped) {
+          // Build display dynamically from whatever columns the backend returned
+          display = rows.map(r => {
+            const mapped = {};
+            Object.keys(r).forEach(k => { mapped[k.replace(/_/g, ' ').toUpperCase()] = r[k] ?? '—'; });
+            return mapped;
+          });
+          // Chart: find the text label column and numeric value column
+          const cols = Object.keys(rows[0]);
+          const labelCol = cols.find(c => typeof rows[0][c] === 'string');
+          const valueCol = cols.find(c => typeof rows[0][c] === 'number');
+          if (labelCol && valueCol) {
+            chart = rows.map(r => ({ name: r[labelCol], value: r[valueCol] }));
+          } else {
+            chart = [];
+          }
+        } else {
+          // Original individual-employee row mapping (unchanged)
+          display = rows.map(r => ({
+            'Emp No':     r.employee_no  || r.emp_id      || '',
+            'Name':       r.full_name    || r.employee_name || '',
+            'Department': r.dept_name    || r.dept_code   || r.department || '',
+            'Role':       r.current_role_code || r.role   || '',
+            'Shift':      r.shift        || r.shift_code  || r.shift_name || '',
+            'Status':     r.status       || r.attendance_status || '',
+            'Att. Date':  r.att_date     || r.attendance_ts || null,
+            'Penalty':    (r.penalty !== undefined && r.penalty !== null) ? r.penalty
+                          : (r.attendance_penalty !== undefined ? r.attendance_penalty : '—'),
+          }));
+          const map = {};
+          rows.forEach(r => {
+            const k = r.status || r.attendance_status || r.attendance_status_code || 'UNKNOWN';
+            map[k] = (map[k] || 0) + 1;
+          });
+          chart = Object.entries(map).map(([name, value]) => ({ name, value }));
+        }
         rawCount = rows.length;
 
         setIR(irRes);
@@ -736,40 +759,10 @@ function Dashboard({ userRole, onLogout, notify, token }) {
         );
 
       case "analytics":
-        return (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-            <div className="workspace-header">
-              <div className="workspace-title">Analytics</div>
-            </div>
-            <div style={{ padding: '32px', maxWidth: 720 }}>
-              <div className="card" style={{ padding: '28px 32px', marginBottom: 16 }}>
-                <div style={{ fontFamily: 'var(--ff-display)', fontSize: 17, fontWeight: 500, color: 'var(--ink)', marginBottom: 8 }}>Advanced analytics</div>
-                <div style={{ color: 'var(--ink-faint)', fontSize: 13, lineHeight: 1.7 }}>
-                  Monitor key metrics, attendance trends, and system performance data with detailed visualizations.
-                  This view is being built — queries from the Dashboard are the primary interface for now.
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+        return <AnalyticsPage />;
 
       case "reports":
-        return (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-            <div className="workspace-header">
-              <div className="workspace-title">Reports</div>
-            </div>
-            <div style={{ padding: '32px', maxWidth: 720 }}>
-              <div className="card" style={{ padding: '28px 32px' }}>
-                <div style={{ fontFamily: 'var(--ff-display)', fontSize: 17, fontWeight: 500, color: 'var(--ink)', marginBottom: 8 }}>Reports & exports</div>
-                <div style={{ color: 'var(--ink-faint)', fontSize: 13, lineHeight: 1.7 }}>
-                  Generate compliance reports, audit trails, and export results in CSV or JSON format.
-                  Use the Dashboard query interface to run a query, then copy the data using the Copy button in results.
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+        return <ReportsPage />;
 
       case "settings":
         return (
@@ -814,6 +807,350 @@ function Dashboard({ userRole, onLogout, notify, token }) {
     <div className="fc-theme-app">
       <Sidebar onNav={handleNavigation} activeNav={currentNav} />
       {renderContent()}
+    </div>
+  );
+}
+
+/* ── ANALYTICS PAGE ─────────────────────────────────────────────── */
+function AnalyticsPage() {
+  const totalEmp = EMPLOYEES.length;
+  const presentCount = EMPLOYEES.filter(e => e.status === 'PRESENT').length;
+  const absentCount  = EMPLOYEES.filter(e => e.status === 'ABSENT').length;
+  const lateCount    = EMPLOYEES.filter(e => e.status === 'LATE').length;
+  const falseCount   = EMPLOYEES.filter(e => e.status === 'FALSE_PRESENT').length;
+  const attendanceRate = ((presentCount / totalEmp) * 100).toFixed(1);
+
+  const deptStats = DEPTS.map(dept => {
+    const emps = EMPLOYEES.filter(e => e.dept === dept);
+    return {
+      name: dept.replace(/_/g, ' '),
+      PRESENT: emps.filter(e => e.status === 'PRESENT').length,
+      ABSENT:  emps.filter(e => e.status === 'ABSENT').length,
+      LATE:    emps.filter(e => e.status === 'LATE').length,
+      FALSE_PRESENT: emps.filter(e => e.status === 'FALSE_PRESENT').length,
+      total: emps.length,
+    };
+  });
+
+  const roleStats  = ROLES.map(r  => ({ name: r, value: EMPLOYEES.filter(e => e.role  === r).length }));
+  const shiftStats = SHIFTS.map(s => ({ name: s, value: EMPLOYEES.filter(e => e.shift === s).length }));
+
+  const hireYears = {};
+  EMPLOYEES.forEach(e => { const yr = e.hired.slice(0,4); hireYears[yr] = (hireYears[yr]||0)+1; });
+  const hireTrend = Object.entries(hireYears).sort(([a],[b])=>a-b).map(([year,count])=>({year,count}));
+
+  const penaltyCount = EMPLOYEES.filter(e => e.penalty !== null).length;
+
+  const TT = { background:'rgba(14,31,24,0.95)', border:'1px solid rgba(201,168,76,0.25)', borderRadius:8, fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:'var(--parchment)' };
+  const PALETTE = ['#3A5E47','#C9A84C','#567A62','#E2C97E','#1A3028','#8B6E2E','#6B9E7A'];
+  const STATUS_C = { PRESENT:'#3B7A52', ABSENT:'#A63228', LATE:'#B07020', FALSE_PRESENT:'#6B42A0' };
+
+  const StatCard = ({ label, value, sub, color }) => (
+    <div className="card" style={{ padding:'20px 24px', display:'flex', flexDirection:'column', gap:4 }}>
+      <div style={{ fontFamily:'var(--ff-mono)', fontSize:9, letterSpacing:'0.12em', color:'var(--ink-faint)', textTransform:'uppercase' }}>{label}</div>
+      <div style={{ fontFamily:'var(--ff-display)', fontSize:32, fontWeight:500, color: color||'var(--ink)', lineHeight:1.1 }}>{value}</div>
+      {sub && <div style={{ fontSize:11, color:'var(--ink-faint)' }}>{sub}</div>}
+    </div>
+  );
+
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'auto', background:'var(--parchment)' }}>
+      <div className="workspace-header">
+        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+          <div className="workspace-title">Analytics</div>
+          <span className="badge badge-forest">200 employees · live</span>
+        </div>
+        <div style={{ fontFamily:'var(--ff-mono)', fontSize:9, color:'var(--ink-faint)', letterSpacing:'0.1em' }}>FY 2026 · ALL DIVISIONS</div>
+      </div>
+
+      <div style={{ padding:'28px 32px', display:'flex', flexDirection:'column', gap:24 }}>
+
+        {/* KPI Row */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12 }}>
+          <StatCard label="Total Employees"  value={totalEmp}          sub="across all divisions" />
+          <StatCard label="Attendance Rate"  value={`${attendanceRate}%`} sub={`${presentCount} present today`}  color="var(--status-present)" />
+          <StatCard label="Absent Today"     value={absentCount}       sub={`${((absentCount/totalEmp)*100).toFixed(1)}% of workforce`} color="var(--status-absent)" />
+          <StatCard label="Late Arrivals"    value={lateCount}         sub="beyond grace period"  color="var(--status-late)" />
+          <StatCard label="False Presence"   value={falseCount}        sub={`${penaltyCount} penalty flags`}     color="var(--status-false)" />
+        </div>
+
+        {/* Dept Stacked Bar + Role Pie */}
+        <div style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:16 }}>
+          <div className="card" style={{ padding:'22px 24px' }}>
+            <div style={{ fontFamily:'var(--ff-display)', fontSize:15, fontWeight:500, marginBottom:4 }}>Attendance by Department</div>
+            <div style={{ fontSize:11, color:'var(--ink-faint)', marginBottom:16 }}>Stacked by status across all 7 divisions</div>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={deptStats} margin={{ top:4, right:8, bottom:60, left:0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(14,31,24,0.06)" />
+                <XAxis dataKey="name" tick={{ fill:'var(--ink-faint)', fontSize:9, fontFamily:"'JetBrains Mono',monospace" }} angle={-30} textAnchor="end" interval={0} />
+                <YAxis tick={{ fill:'var(--ink-faint)', fontSize:9 }} />
+                <Tooltip contentStyle={TT} />
+                <Legend wrapperStyle={{ fontSize:10, fontFamily:"'JetBrains Mono',monospace", color:'var(--ink-faint)', paddingTop:8 }} />
+                <Bar dataKey="PRESENT"       stackId="a" fill={STATUS_C.PRESENT}       name="Present" />
+                <Bar dataKey="ABSENT"        stackId="a" fill={STATUS_C.ABSENT}        name="Absent" />
+                <Bar dataKey="LATE"          stackId="a" fill={STATUS_C.LATE}          name="Late" />
+                <Bar dataKey="FALSE_PRESENT" stackId="a" fill={STATUS_C.FALSE_PRESENT} name="False Present" radius={[3,3,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="card" style={{ padding:'22px 24px' }}>
+            <div style={{ fontFamily:'var(--ff-display)', fontSize:15, fontWeight:500, marginBottom:4 }}>Role Distribution</div>
+            <div style={{ fontSize:11, color:'var(--ink-faint)', marginBottom:16 }}>Executive · Supervisor · Workman</div>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={roleStats} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}
+                  labelLine={false}
+                  label={({ cx,cy,midAngle,innerRadius,outerRadius,percent }) => {
+                    const R=Math.PI/180, r=innerRadius+(outerRadius-innerRadius)*0.55;
+                    const x=cx+r*Math.cos(-midAngle*R), y=cy+r*Math.sin(-midAngle*R);
+                    return percent>0.04 ? <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={10} fontFamily="'JetBrains Mono',monospace">{`${(percent*100).toFixed(0)}%`}</text> : null;
+                  }}>
+                  {roleStats.map((_,i) => <Cell key={i} fill={PALETTE[i%PALETTE.length]} />)}
+                </Pie>
+                <Tooltip contentStyle={TT} />
+                <Legend wrapperStyle={{ fontSize:10, fontFamily:"'JetBrains Mono',monospace", color:'var(--ink-faint)' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Hire Trend + Shift Bar */}
+        <div style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:16 }}>
+          <div className="card" style={{ padding:'22px 24px' }}>
+            <div style={{ fontFamily:'var(--ff-display)', fontSize:15, fontWeight:500, marginBottom:4 }}>Hiring Trend</div>
+            <div style={{ fontSize:11, color:'var(--ink-faint)', marginBottom:16 }}>Employees joined per year — 2008 to 2023</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={hireTrend} margin={{ top:4, right:8, bottom:8, left:0 }}>
+                <defs>
+                  <linearGradient id="hiregrd" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#3A5E47" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3A5E47" stopOpacity={0.02}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(14,31,24,0.06)" />
+                <XAxis dataKey="year"  tick={{ fill:'var(--ink-faint)', fontSize:9, fontFamily:"'JetBrains Mono',monospace" }} />
+                <YAxis tick={{ fill:'var(--ink-faint)', fontSize:9 }} />
+                <Tooltip contentStyle={TT} />
+                <Area type="monotone" dataKey="count" stroke="#3A5E47" strokeWidth={2} fill="url(#hiregrd)" name="Hired" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="card" style={{ padding:'22px 24px' }}>
+            <div style={{ fontFamily:'var(--ff-display)', fontSize:15, fontWeight:500, marginBottom:4 }}>Shift Distribution</div>
+            <div style={{ fontSize:11, color:'var(--ink-faint)', marginBottom:16 }}>Workforce across Morning · Afternoon · Night</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={shiftStats} margin={{ top:4, right:8, bottom:8, left:0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(14,31,24,0.06)" />
+                <XAxis dataKey="name" tick={{ fill:'var(--ink-faint)', fontSize:9, fontFamily:"'JetBrains Mono',monospace" }} />
+                <YAxis tick={{ fill:'var(--ink-faint)', fontSize:9 }} />
+                <Tooltip contentStyle={TT} />
+                <Bar dataKey="value" name="Employees" radius={[4,4,0,0]}>
+                  {shiftStats.map((_,i) => <Cell key={i} fill={PALETTE[i]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Division Summary Table */}
+        <div className="card" style={{ padding:'22px 24px' }}>
+          <div style={{ fontFamily:'var(--ff-display)', fontSize:15, fontWeight:500, marginBottom:4 }}>Division Summary</div>
+          <div style={{ fontSize:11, color:'var(--ink-faint)', marginBottom:16 }}>Headcount and attendance rate per division</div>
+          <div style={{ overflowX:'auto' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse', fontFamily:'var(--ff-mono)', fontSize:11 }}>
+              <thead>
+                <tr style={{ borderBottom:'1px solid var(--border-light)' }}>
+                  {['Division','Total','Present','Absent','Late','False','Rate'].map(h => (
+                    <th key={h} style={{ textAlign:'left', padding:'8px 12px', color:'var(--ink-faint)', fontWeight:500, letterSpacing:'0.06em', fontSize:9, textTransform:'uppercase' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {deptStats.map((d,i) => {
+                  const rate = d.total > 0 ? ((d.PRESENT/d.total)*100).toFixed(0) : 0;
+                  return (
+                    <tr key={d.name} style={{ borderBottom:'1px solid var(--border-light)', background: i%2===0?'transparent':'rgba(14,31,24,0.02)' }}>
+                      <td style={{ padding:'9px 12px', fontWeight:500, color:'var(--ink)' }}>{d.name}</td>
+                      <td style={{ padding:'9px 12px', color:'var(--ink-muted)' }}>{d.total}</td>
+                      <td style={{ padding:'9px 12px' }}><span style={{ background:'rgba(59,122,82,0.1)',  color:'#3B7A52', borderRadius:4, padding:'2px 7px' }}>{d.PRESENT}</span></td>
+                      <td style={{ padding:'9px 12px' }}><span style={{ background:'rgba(166,50,40,0.1)', color:'#A63228', borderRadius:4, padding:'2px 7px' }}>{d.ABSENT}</span></td>
+                      <td style={{ padding:'9px 12px' }}><span style={{ background:'rgba(176,112,32,0.1)',color:'#B07020', borderRadius:4, padding:'2px 7px' }}>{d.LATE}</span></td>
+                      <td style={{ padding:'9px 12px' }}><span style={{ background:'rgba(107,66,160,0.1)',color:'#6B42A0', borderRadius:4, padding:'2px 7px' }}>{d.FALSE_PRESENT}</span></td>
+                      <td style={{ padding:'9px 12px' }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                          <div style={{ width:60, height:4, background:'rgba(14,31,24,0.08)', borderRadius:2, overflow:'hidden' }}>
+                            <div style={{ height:'100%', width:`${rate}%`, borderRadius:2, background: rate>=80?'#3B7A52':rate>=60?'#B07020':'#A63228', transition:'width 0.5s' }} />
+                          </div>
+                          <span style={{ color:'var(--ink-muted)', minWidth:30 }}>{rate}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ── REPORTS PAGE ────────────────────────────────────────────────── */
+function ReportsPage() {
+  const [reportFilter, setReportFilter] = useState('ALL');
+  const [reportDept,   setReportDept]   = useState('ALL');
+  const [reportRole,   setReportRole]   = useState('ALL');
+  const [copied,       setCopied]       = useState(false);
+
+  const filtered = EMPLOYEES.filter(e =>
+    (reportFilter === 'ALL' || e.status === reportFilter) &&
+    (reportDept   === 'ALL' || e.dept   === reportDept)   &&
+    (reportRole   === 'ALL' || e.role   === reportRole)
+  );
+
+  const exportCSV = () => {
+    const header = 'Employee No,Name,Department,Role,Shift,Status,Hired,Penalty';
+    const rows   = filtered.map(e => `${e.no},"${e.name}",${e.dept},${e.role},${e.shift},${e.status},${e.hired},${e.penalty??''}`);
+    const blob   = new Blob([[header,...rows].join('\n')], { type:'text/csv' });
+    const url    = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='bhelviz_report.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportJSON = () => {
+    const blob = new Blob([JSON.stringify(filtered, null, 2)], { type:'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='bhelviz_report.json'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const copyData = async () => {
+    await navigator.clipboard.writeText(JSON.stringify(filtered, null, 2));
+    setCopied(true); setTimeout(() => setCopied(false), 1600);
+  };
+
+  const SelStyle = { background:'var(--cream)', border:'1px solid var(--border-medium)', borderRadius:6, padding:'6px 10px', fontFamily:'var(--ff-mono)', fontSize:11, color:'var(--ink)', cursor:'pointer', outline:'none' };
+  const BtnStyle = (dark) => ({ padding:'6px 14px', borderRadius:6, border:'1px solid var(--border-medium)', background: dark?'var(--forest-rich)':'var(--cream)', color: dark?'var(--parchment)':'var(--ink)', fontFamily:'var(--ff-mono)', fontSize:11, cursor:'pointer', transition:'all 0.15s' });
+
+  const fPresent = filtered.filter(e=>e.status==='PRESENT').length;
+  const fAbsent  = filtered.filter(e=>e.status==='ABSENT').length;
+  const fLate    = filtered.filter(e=>e.status==='LATE').length;
+  const fFalse   = filtered.filter(e=>e.status==='FALSE_PRESENT').length;
+
+  const STATUS_COLORS = { PRESENT:['rgba(59,122,82,0.1)','#3B7A52'], ABSENT:['rgba(166,50,40,0.1)','#A63228'], LATE:['rgba(176,112,32,0.1)','#B07020'], FALSE_PRESENT:['rgba(107,66,160,0.1)','#6B42A0'] };
+
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'auto', background:'var(--parchment)' }}>
+      <div className="workspace-header">
+        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+          <div className="workspace-title">Reports</div>
+          <span className="badge badge-gold">{filtered.length} records</span>
+        </div>
+        <div style={{ display:'flex', gap:8 }}>
+          <button style={BtnStyle(false)} onClick={copyData}>{copied ? '✓ Copied' : 'Copy JSON'}</button>
+          <button style={BtnStyle(false)} onClick={exportCSV}>↓ CSV</button>
+          <button style={BtnStyle(true)}  onClick={exportJSON}>↓ JSON</button>
+        </div>
+      </div>
+
+      <div style={{ padding:'24px 32px', display:'flex', flexDirection:'column', gap:20 }}>
+
+        {/* Filters */}
+        <div className="card" style={{ padding:'16px 20px', display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
+          <span style={{ fontFamily:'var(--ff-mono)', fontSize:9, letterSpacing:'0.1em', color:'var(--ink-faint)', textTransform:'uppercase', flexShrink:0 }}>Filter by</span>
+
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:11, color:'var(--ink-faint)' }}>Status</span>
+            <select style={SelStyle} value={reportFilter} onChange={e => setReportFilter(e.target.value)}>
+              <option value="ALL">All statuses</option>
+              {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:11, color:'var(--ink-faint)' }}>Department</span>
+            <select style={SelStyle} value={reportDept} onChange={e => setReportDept(e.target.value)}>
+              <option value="ALL">All departments</option>
+              {DEPTS.map(d => <option key={d} value={d}>{d.replace(/_/g,' ')}</option>)}
+            </select>
+          </div>
+
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:11, color:'var(--ink-faint)' }}>Role</span>
+            <select style={SelStyle} value={reportRole} onChange={e => setReportRole(e.target.value)}>
+              <option value="ALL">All roles</option>
+              {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          <button style={{ marginLeft:'auto', ...BtnStyle(false), background:'rgba(166,50,40,0.07)', color:'var(--status-absent)', borderColor:'rgba(166,50,40,0.2)' }}
+            onClick={() => { setReportFilter('ALL'); setReportDept('ALL'); setReportRole('ALL'); }}>
+            Clear filters
+          </button>
+        </div>
+
+        {/* Summary Pills */}
+        <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+          {[
+            { label:'Total',   val:filtered.length, bg:'rgba(14,31,24,0.06)',  fg:'var(--ink)' },
+            { label:'Present', val:fPresent,         bg:'rgba(59,122,82,0.1)', fg:'#3B7A52' },
+            { label:'Absent',  val:fAbsent,          bg:'rgba(166,50,40,0.1)', fg:'#A63228' },
+            { label:'Late',    val:fLate,            bg:'rgba(176,112,32,0.1)',fg:'#B07020' },
+            { label:'False',   val:fFalse,           bg:'rgba(107,66,160,0.1)',fg:'#6B42A0' },
+          ].map(({ label, val, bg, fg }) => (
+            <div key={label} style={{ background:bg, color:fg, borderRadius:8, padding:'8px 16px', fontFamily:'var(--ff-mono)', fontSize:12, display:'flex', gap:8, alignItems:'center' }}>
+              <span style={{ opacity:0.7, fontSize:10 }}>{label}</span>
+              <span style={{ fontWeight:600 }}>{val}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Data Table */}
+        <div className="card" style={{ padding:0, overflow:'hidden' }}>
+          <div style={{ overflowX:'auto', maxHeight:'55vh', overflowY:'auto' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse', fontFamily:'var(--ff-mono)', fontSize:11 }}>
+              <thead style={{ position:'sticky', top:0, background:'var(--cream)', zIndex:2 }}>
+                <tr style={{ borderBottom:'2px solid var(--border-light)' }}>
+                  {['Emp No','Name','Department','Role','Shift','Status','Hired','Penalty'].map(h => (
+                    <th key={h} style={{ textAlign:'left', padding:'10px 14px', color:'var(--ink-faint)', fontWeight:500, letterSpacing:'0.06em', fontSize:9, textTransform:'uppercase', whiteSpace:'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={8} style={{ padding:'40px', textAlign:'center', color:'var(--ink-faint)', fontSize:13 }}>No records match the selected filters.</td></tr>
+                ) : filtered.map((e, i) => {
+                  const [sbg,sfg] = STATUS_COLORS[e.status] || ['rgba(14,31,24,0.06)','var(--ink)'];
+                  return (
+                    <tr key={e.no}
+                      style={{ borderBottom:'1px solid var(--border-light)', background: i%2===0?'transparent':'rgba(14,31,24,0.015)', transition:'background 0.1s', cursor:'default' }}
+                      onMouseEnter={ev => ev.currentTarget.style.background='rgba(201,168,76,0.05)'}
+                      onMouseLeave={ev => ev.currentTarget.style.background= i%2===0?'transparent':'rgba(14,31,24,0.015)'}>
+                      <td style={{ padding:'8px 14px', color:'var(--ink-faint)' }}>{e.no}</td>
+                      <td style={{ padding:'8px 14px', color:'var(--ink)', fontWeight:500 }}>{e.name}</td>
+                      <td style={{ padding:'8px 14px', color:'var(--ink-muted)' }}>{e.dept.replace(/_/g,' ')}</td>
+                      <td style={{ padding:'8px 14px', color:'var(--ink-muted)' }}>{e.role}</td>
+                      <td style={{ padding:'8px 14px', color:'var(--ink-muted)' }}>{e.shift}</td>
+                      <td style={{ padding:'8px 14px' }}><span style={{ background:sbg, color:sfg, borderRadius:4, padding:'2px 8px', fontSize:10, fontWeight:600 }}>{e.status}</span></td>
+                      <td style={{ padding:'8px 14px', color:'var(--ink-faint)' }}>{e.hired}</td>
+                      <td style={{ padding:'8px 14px', color: e.penalty ? '#A63228' : 'var(--ink-faint)' }}>{e.penalty ?? '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ padding:'10px 16px', borderTop:'1px solid var(--border-light)', display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(14,31,24,0.02)' }}>
+            <span style={{ fontFamily:'var(--ff-mono)', fontSize:10, color:'var(--ink-faint)' }}>{filtered.length} of {EMPLOYEES.length} records shown</span>
+            <span style={{ fontFamily:'var(--ff-mono)', fontSize:10, color:'var(--ink-faint)' }}>Use buttons above to export ↑</span>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
