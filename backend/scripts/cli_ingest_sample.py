@@ -10,9 +10,10 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent
+sys.path.insert(0, str(REPO.parent))   # add backend/ so "RAG" package is importable
 
 def ingest_paths(paths):
-    from BHELVIZ_FULL.backend.RAG.ingestion import _init_resources, _chunk_text, _embed_texts, CHROMA_DIR, COLLECTION_NAME
+    from RAG.ingestion import _init_resources, _chunk_text, _embed_texts, CHROMA_DIR, COLLECTION_NAME
     print('Initializing embedding and ChromaDB...')
     _init_resources()
 

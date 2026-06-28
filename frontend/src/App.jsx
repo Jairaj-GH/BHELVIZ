@@ -491,7 +491,37 @@ function Dashboard({ userRole, onLogout, notify, token }) {
   const [feedback, setFeedback] = useState(null);
   const [currentNav, setCurrentNav] = useState("dashboard");
   const recogRef = useRef(null);
+  // inside function Dashboard(...), after the existing useState lines (after `const recogRef = useRef(null);`)
+  const [liveEmployees, setLiveEmployees] = useState(EMPLOYEES); // fallback to mock until real data loads
 
+  useEffect(() => {
+    if (!token) return;
+    (async () => {
+      try {
+        const resp = await fetch('/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ utterance: 'list all employees with status', session_id: `dash-${Date.now()}`, history: [] }),
+        });
+        if (!resp.ok) return;
+        const envelope = await resp.json();
+        const payload = envelope.type === 'hybrid' ? (envelope.structured || {}) : (envelope.data || envelope);
+        const rows = payload.rows || [];
+        if (rows.length > 0) {
+          setLiveEmployees(rows.map(r => ({
+            no:      r.employee_no || r.emp_id || '',
+            name:    r.full_name || r.employee_name || '',
+            dept:    r.dept_name || r.dept_code || r.department || '',
+            role:    r.current_role_code || r.role || '',
+            shift:   r.shift || r.shift_code || r.shift_name || '',
+            status:  r.status || r.attendance_status || '',
+            hired:   r.hired || r.hire_date || '',
+            penalty: (r.penalty !== undefined && r.penalty !== null) ? r.penalty : null,
+          })));
+        }
+      } catch (e) { /* keep mock fallback on failure */ }
+    })();
+  }, [token]);
   const unlockManual = () => {
     if (manualPwd.length < 6) { notify("Manual password must be ≥6 characters", "error"); return; }
     setUnlockingManual(true);
@@ -759,10 +789,10 @@ function Dashboard({ userRole, onLogout, notify, token }) {
         );
 
       case "analytics":
-        return <AnalyticsPage />;
+        return <AnalyticsPage employees={liveEmployees} />;
 
       case "reports":
-        return <ReportsPage />;
+        return <ReportsPage employees={liveEmployees} />;
 
       case "settings":
         return (
@@ -812,7 +842,8 @@ function Dashboard({ userRole, onLogout, notify, token }) {
 }
 
 /* ── ANALYTICS PAGE ─────────────────────────────────────────────── */
-function AnalyticsPage() {
+function AnalyticsPage({employees}) {
+  const EMPLOYEES = employees;
   const totalEmp = EMPLOYEES.length;
   const presentCount = EMPLOYEES.filter(e => e.status === 'PRESENT').length;
   const absentCount  = EMPLOYEES.filter(e => e.status === 'ABSENT').length;
@@ -1000,7 +1031,8 @@ function AnalyticsPage() {
 }
 
 /* ── REPORTS PAGE ────────────────────────────────────────────────── */
-function ReportsPage() {
+function ReportsPage({employees}) {
+  const EMPLOYEES = employees;
   const [reportFilter, setReportFilter] = useState('ALL');
   const [reportDept,   setReportDept]   = useState('ALL');
   const [reportRole,   setReportRole]   = useState('ALL');

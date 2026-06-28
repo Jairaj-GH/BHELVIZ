@@ -475,10 +475,10 @@ function DocumentBlock({ m }) {
 const SAMPLES = [
   'Compare attendance by department',
   'Show all absent executives today',
-  'False attendance cases in night shift',
-  'How many supervisors in Power Systems?',
-  'Employees hired after 2018 in R&D',
-  'Anomaly detection — penalty cases',
+  'Show approved leaves',
+  'Show employees in HR department',
+  'Show false attendance policy',
+  'Show salary, allowances and benefits policies',
 ];
 
 export default function ChatWorkspace({ messages, onSend, inputValue, setInputValue, loading }) {
